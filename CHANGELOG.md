@@ -6,6 +6,16 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### M8: The canon
+- Crate documentation opens with the history of the problem logarithms solved, the
+  guarantees, an overview and the feature table.
+- Sourced history notes beside the API they illuminate: Napier (`Log`), Bürgi
+  (`powi`), Briggs (`log10`), Saint-Vincent and de Sarasa (`ln`), Mercator (`Add`).
+- Examples: `hmm_forward`, `likelihood`, `briggs_table` (checked against a new mpmath
+  fixture), `benford`.
+- README with a motivating example (run as a doctest), guarantees, accuracy table,
+  features and a note on the name.
+
 ### M7: Benchmarks
 - Criterion benchmarks in `bench/` (a separate workspace): single operations,
   log-sum-exp on 10 / 1k / 1M elements, products, and an HMM forward pass, against plain

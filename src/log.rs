@@ -23,6 +23,11 @@ use crate::float::LogFloat;
 /// | `a.checked_sub(b)` | a−b | `la + log1mexp(la − lb)` |
 /// | `a.powf(p)` | aᵖ | `p · la` |
 ///
+/// This is Napier's idea exactly. His *Mirifici Logarithmorum Canonis Descriptio*
+/// (Edinburgh, 1614) tabulated a logarithm for the sine of every minute of arc so that the
+/// products in spherical trigonometry could be done as sums of table entries. A `Log` is a
+/// one-entry table: it carries the logarithm with it, and the operators do the lookups.
+///
 /// There is deliberately no `Sub` operator, because a − b leaves the domain when b > a. Use
 /// [`checked_sub`](Log::checked_sub), [`abs_diff`](Log::abs_diff), or
 /// [`SignedLog`](crate::SignedLog).
@@ -183,6 +188,14 @@ impl<F: LogFloat> Log<F> {
     }
 
     /// The stored natural logarithm, ln(x). Exact.
+    ///
+    /// The natural logarithm is the one `Log` stores because the hardware's best primitives
+    /// (`exp`, `ln`, `ln_1p`, `exp_m1`) are natural, and every other base is one
+    /// multiplication away. Its claim to be *natural* is older than the name: in *Opus
+    /// geometricum* (1647) Grégoire de Saint-Vincent showed that the area under the hyperbola
+    /// y = 1/x from a to b equals the area from ka to kb, and in 1649 his student Alphonse
+    /// Antonio de Sarasa observed that this makes the area a logarithm. ln(x) is that area,
+    /// from 1 to x.
     #[inline]
     pub fn ln(self) -> F {
         self.0
@@ -197,6 +210,14 @@ impl<F: LogFloat> Log<F> {
 
     /// The base-10 logarithm, `ln · log10(e)`, formed with log10(e) to twice the float's
     /// precision: within a hair over half an ulp of the exact value.
+    ///
+    /// Base 10 is Henry Briggs's contribution. After visiting Napier in 1615 and 1616 he
+    /// recomputed the tables so that, in modern terms, log 1 = 0 and log 10 = 1, and his *Arithmetica
+    /// Logarithmica* (London, 1624) gave the logarithms of 1–20,000 and 90,000–100,000 to
+    /// fourteen decimal places, by hand. Fourteen places is about what an `f64` holds for a
+    /// five-digit number's logarithm (see `examples/briggs_table.rs`). The integer part of
+    /// `log10` is the decimal exponent that `Display` prints for values beyond the float's
+    /// range.
     #[inline]
     pub fn log10(self) -> F {
         F::from_f64(dd::mul_rounded(self.0.to_f64(), dd::LOG10_E))

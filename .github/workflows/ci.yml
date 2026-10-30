@@ -42,6 +42,8 @@ jobs:
           toolchain: ${{ matrix.toolchain }}
       - run: cargo test --all-features
       - run: cargo test --no-default-features
+      - name: run examples (each checks its own results)
+        run: for e in hmm_forward likelihood briggs_table benford; do cargo run --release --example "$e"; done
 
   no-std:
     runs-on: ubuntu-latest

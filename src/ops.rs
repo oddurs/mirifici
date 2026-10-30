@@ -69,6 +69,20 @@ impl<F: LogFloat> Log<F> {
     /// xⁿ, computed as `n · ln`. Same conventions as [`powf`](Log::powf), including 0⁰ = 1.
     ///
     /// For `f32`, `n` is first rounded to `f32`, which is exact for |n| ≤ 2²⁴.
+    ///
+    /// Integer powers are where logarithms began for Jost Bürgi, the Swiss clockmaker who
+    /// built them independently of Napier. His *Arithmetische und Geometrische
+    /// Progress-Tabulen* (Prague, 1620) set an arithmetic progression of “red” numbers
+    /// beside the geometric progression of “black” numbers 10⁸·1.0001ⁿ, so that a black
+    /// number's power could be read off by multiplying its red number. `powi(n)` is one step
+    /// along such a table: the stored log is multiplied by n.
+    ///
+    /// ```
+    /// use mirifici::Log;
+    /// // The last entry of Bürgi's table: 1.0001^23027 ≈ 10 (his black number 10^9).
+    /// let x = Log::from_value(1.0001_f64).powi(23027);
+    /// assert!((x.to_value() - 9.9999).abs() < 1e-3);
+    /// ```
     #[inline]
     #[must_use]
     pub fn powi(self, n: i32) -> Self {

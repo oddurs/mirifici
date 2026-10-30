@@ -74,6 +74,14 @@ impl<F: LogFloat> Add for Log<F> {
     /// `ln_1p(…)` lies in [0, ln 2]. Edge cases: `x + ZERO = x` (exactly), and
     /// `x + INFINITY = INFINITY`, including `INFINITY + INFINITY`.
     ///
+    /// The correction is computed with `ln_1p(t) = ln(1 + t)`, not with `ln(1.0 + t)`: when
+    /// b is much smaller than a, t = b/a is tiny and forming `1.0 + t` rounds its low digits
+    /// away (for t = 10⁻²⁰ it rounds to exactly 1, and the sum would lose b entirely).
+    /// `ln_1p` evaluates the function directly, in the spirit of Nicholas Mercator's
+    /// *Logarithmotechnia* (London, 1668), which gave the series
+    /// ln(1 + t) = t − t²/2 + t³/3 − …; the book is also generally credited with the first
+    /// use of the term “natural logarithm”.
+    ///
     /// Error: at most ε·max(1, |ln(a + b)|) in the stored log, i.e. a relative error of that
     /// size in the value (measured 0.75; see `docs/accuracy.md`).
     #[inline]

@@ -246,12 +246,21 @@ def gen_text(t: Type, seed: int):
     write(f"display_{t.name}.csv", ["ln", "precision", "text"], rows)
 
 
+def gen_briggs():
+    """log10(n) for one page of a Briggs-style table, to 25 decimals."""
+    rows = []
+    for n in range(10001, 10052):
+        rows.append([str(n), mpmath.nstr(mpmath.log10(n), 27, strip_zeros=False)])
+    write("briggs.csv", ["n", "log10"], rows)
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     gen(F64, 1614)
     gen(F32, 1624)
     gen_text(F64, 1668)
     gen_text(F32, 1647)
+    gen_briggs()
 
 
 if __name__ == "__main__":
