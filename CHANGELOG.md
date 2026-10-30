@@ -6,6 +6,15 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### M1: Core type (f64)
+- `Log<f64>` with `ZERO`, `ONE`, `INFINITY`; `from_value`, `try_from_value`, `from_ln`,
+  `try_from_ln`, `from_ln_unchecked`, `from_log2`, `from_log10`.
+- Accessors `ln`, `log2`, `log10`, `log`, saturating `to_value`, `try_to_value`.
+- `Mul`, `Div` and their assign/reference forms; `checked_mul`, `checked_div`, `powf`,
+  `powi`, `sqrt`, `recip`.
+- `PartialEq`, `PartialOrd`, `total_cmp`, `max`, `min`, `Debug`, `Default`.
+- `DomainError`.
+
 ### M0: Scaffold
 - Cargo project, dual MIT/Apache-2.0 licences, `rustfmt.toml`, `clippy.toml`.
 - CI: fmt, clippy, tests on stable and MSRV (1.85), no_std build for
