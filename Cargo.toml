@@ -1,0 +1,29 @@
+[package]
+name = "mirifici"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "A log-space number type: products become sums, and magnitudes far beyond f64 stay representable."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/oddurs/mirifici"
+documentation = "https://docs.rs/mirifici"
+readme = "README.md"
+keywords = ["logarithm", "log-space", "probability", "logsumexp", "no-std"]
+categories = ["mathematics", "science", "no-std", "no-std::no-alloc"]
+exclude = ["/.github", "/tools", "/bench"]
+
+[features]
+default = ["std"]
+## Use the platform's math library through `std`. Without it, `libm` is used.
+std = []
+
+[dependencies]
+libm = "0.2.8"
+
+[lints.rust]
+unsafe_code = "deny"
+missing_docs = "warn"
+rust_2018_idioms = { level = "warn", priority = -1 }
+
+[lints.clippy]
+float_cmp = "allow"
