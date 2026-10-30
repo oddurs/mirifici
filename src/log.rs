@@ -23,7 +23,7 @@ use crate::float::LogFloat;
 /// | `a.powf(p)` | aᵖ | `p · la` |
 ///
 /// There is deliberately no `Sub` operator, because a − b leaves the domain when b > a. Use
-/// `checked_sub`, `abs_diff` (milestone 2), or
+/// [`checked_sub`](Log::checked_sub), [`abs_diff`](Log::abs_diff), or
 /// `SignedLog` (milestone 4).
 ///
 /// # NaN policy

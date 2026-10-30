@@ -14,3 +14,7 @@ Choices not fixed by the design brief. Each one keeps NaN out and the API small.
 - **`log(base)` panics on a base that is not finite, positive and ≠ 1.** Every such base would make the result NaN or meaningless.
 - **`max` / `min` are provided.** Max-product (Viterbi) code needs them and `PartialOrd` alone does not give them.
 - **`Log::ZERO` needs a type annotation (`Log::<f64>::ZERO`).** Rust does not use default type parameters for inference; this is a language limitation, not a choice.
+- **`log1mexp` is a public free function on raw floats and panics for d < 0 or NaN.** It is useful on its own (it is the kernel of subtraction), and returning NaN would break the crate's NaN policy.
+- **The log-sum-exp accumulators leave one copy of the maximum out and finish with `m + ln_1p(s)`.** Adding the maximum's `exp(0) = 1` first would round away the low bits of small corrections.
+- **`sum_two_pass` and `product_compensated` are associated functions** (`Log::sum_two_pass(&xs)`), so they do not need an extension trait.
+- **`Sum`/`Product` are also implemented for `&Log`,** so `slice.iter().sum()` works without `.copied()`.

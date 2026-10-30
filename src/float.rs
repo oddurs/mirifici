@@ -49,8 +49,6 @@ pub(crate) mod sealed {
         const LN_10: Self;
         const LOG2_E: Self;
         const LOG10_E: Self;
-        /// Name used in panic messages and docs, e.g. `"f64"`.
-        const NAME: &'static str;
 
         fn exp(self) -> Self;
         fn ln(self) -> Self;
@@ -95,7 +93,6 @@ macro_rules! impl_float {
             const LN_10: Self = core::$t::consts::LN_10;
             const LOG2_E: Self = core::$t::consts::LOG2_E;
             const LOG10_E: Self = core::$t::consts::LOG10_E;
-            const NAME: &'static str = stringify!($t);
 
             #[inline]
             fn exp(self) -> Self {

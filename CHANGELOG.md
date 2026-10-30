@@ -6,6 +6,13 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### M2: Addition, subtraction, aggregation
+- `Add`, `AddAssign` (log-sum-exp), `checked_sub`, `abs_diff`, and the free function
+  `log1mexp` (Mächler 2012).
+- Streaming `Sum`, `Log::sum_two_pass`, `Product`, `Log::product_compensated` (Neumaier).
+- mpmath fixtures (`tools/gen_fixtures.py`, `tests/fixtures/`), accuracy tests, property
+  tests, and `docs/accuracy.md`.
+
 ### M1: Core type (f64)
 - `Log<f64>` with `ZERO`, `ONE`, `INFINITY`; `from_value`, `try_from_value`, `from_ln`,
   `try_from_ln`, `from_ln_unchecked`, `from_log2`, `from_log10`.

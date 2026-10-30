@@ -27,3 +27,6 @@ rust_2018_idioms = { level = "warn", priority = -1 }
 
 [lints.clippy]
 float_cmp = "allow"
+
+[dev-dependencies]
+proptest = { version = "1.11.0", default-features = false, features = ["std"] }

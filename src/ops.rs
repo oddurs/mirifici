@@ -176,5 +176,7 @@ macro_rules! forward_binop {
         }
     };
 }
+pub(crate) use forward_binop;
+
 forward_binop!(Log, Mul, mul, MulAssign, mul_assign);
 forward_binop!(Log, Div, div, DivAssign, div_assign);
