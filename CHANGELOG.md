@@ -6,6 +6,16 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### M5: Formatting and parsing beyond float range
+- `Display`, `LowerExp`, `UpperExp` for `Log` and `SignedLog`: identical to the float's
+  output in range, scientific notation from the stored log beyond it (`1e-5000`), honouring
+  precision, width, fill, alignment, `+` and `0`.
+- `FromStr` for `Log` and `SignedLog` with arbitrarily large exponents (`2.5e-90210`);
+  `ParseLogError`.
+- `Log::display_base` and `LogDisplay` (`2^-1024.5`, `10^-308.4`).
+- `log2`, `log10`, `from_log2`, `from_log10` now use double-double constants (≤ 0.5 ulp).
+- Parse/display fixtures and round-trip property tests.
+
 ### M4: Slices and `SignedLog`
 - `mirifici::slice`: `logsumexp`, `log_softmax_in_place`, `softmax_in_place`,
   `log_mean_exp`, `log_mean_exp_weighted` on raw logs; `normalize_in_place`, `mean`,

@@ -27,3 +27,10 @@ Choices not fixed by the design brief. Each one keeps NaN out and the API small.
 - **A non-zero `SignedLog` divided by zero is an infinity with the numerator's sign,** because zero carries no sign.
 - **`SignedLog`'s `Sum` accumulates positive and negative terms separately and subtracts once,** so cancellation happens once rather than at every sign change.
 - **`SignedLog` has no powers or roots.** Fractional powers of negative numbers leave the reals; take them on the magnitude.
+- **`Display` inside the float's normal range prints the float itself** (positional, like `f64`), as the brief asks; outside it prints scientific notation from the stored log. Subnormal values count as outside, so `5e-324` prints all the digits its log resolves rather than the float's three.
+- **Without a precision flag, beyond-range `Display` prints the shortest mantissa that parses back to the same `Log`.** This mirrors Rust's float formatting and makes `parse(display(x)) == x` exact.
+- **`FromStr` uses the float's own parser inside the normal range** (|exponent| ≤ 307 for `f64`, 37 for `f32`), so parsing agrees exactly with `from_value`; beyond it, `ln(m) + k·ln 10` in double-double.
+- **Out-of-range strings saturate rather than error** (`"1e<400 nines>"` parses to `INFINITY`), matching float parsing.
+- **`log2`, `log10`, `from_log2`, `from_log10` use double-double constants.** With a plain product, `from_log10(90000.0)` was 2·10⁻¹¹ off and displayed as `1.00000000002e90000`; with it, it prints `1e90000`.
+- **`LogDisplay` ignores width and fill;** the precision flag applies to the exponent, which is the part a reader wants to control.
+- **`ParseLogError` is opaque** (no public kind enum); its message distinguishes empty, invalid, negative and NaN input.

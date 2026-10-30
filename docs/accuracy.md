@@ -53,10 +53,12 @@ Measured with `cargo test --release --test accuracy -- --nocapture` (glibc via
 | `sum_two_pass`, n ≤ 1000 | 170 | 1.067 | 1.067 | 2 |
 | `from_value` | 2000 | 0.492 | 0.492 | 1 |
 | `to_value` (relative error) | 2000 | 0.483 | 0.520 | 1 |
-| `log2` | 2000 | 0.556 | 0.556 | 1 |
-| `log10` | 2000 | 0.596 | 0.596 | 1 |
+| `log2` | 2000 | 0.497 | 0.497 | 0.51 |
+| `log10` | 2000 | 0.481 | 0.481 | 0.51 |
 
-`sqrt` and `recip` are exact. `powi(n)` is `powf(n as F)`.
+`sqrt` and `recip` are exact. `powi(n)` is `powf(n as F)`. `log2`, `log10`,
+`from_log2` and `from_log10` multiply by their constant held to twice the float's
+precision (a double-double), so they are correctly rounded up to a tiny fraction of an ulp.
 
 ## Results: `f32`
 
@@ -76,11 +78,32 @@ slightly less accurate than glibc's.
 | `sum_two_pass`, n ≤ 1000 | 170 | 0.786 | 0.786 | 2 |
 | `from_value` | 2000 | 0.492 | 0.587 | 1 |
 | `to_value` (relative error) | 2000 | 0.488 | 0.537 | 1 |
-| `log2` | 2000 | 0.605 | 0.605 | 1 |
-| `log10` | 2000 | 0.644 | 0.644 | 1 |
+| `log2` | 2000 | 0.487 | 0.487 | 0.51 |
+| `log10` | 2000 | 0.488 | 0.488 | 0.51 |
 
 With ε ≈ 1.2·10⁻⁷, a `Log<f32>` holding 1e-30 (|ln x| ≈ 69) carries a representation
 error of up to ~4·10⁻⁶ relative. Use `f64` unless memory or bandwidth dominates.
+
+## Text: `FromStr` and `Display` beyond the float's range
+
+`tests/text.rs` checks against `tests/fixtures/{parse,display}_{f64,f32}.csv`:
+
+- **Parsing** 1000 decimal strings with 1–25 significant digits and exponents up to
+  ±10¹⁵: max E = 0.482 (`f64`) and 0.470 (`f32`); documented bound 1. Outside the normal
+  range the stored log is `ln(m) + k·ln 10` with `ln 10` in double-double; inside it the
+  float's own correctly rounded parser is used, so `s.parse::<Log>()` equals
+  `Log::from_value(s.parse::<f64>()?)` exactly.
+- **Displaying** 1000 stored logs outside the float's range with a fixed precision
+  (`{:.12e}` for `f64`, `{:.5e}` for `f32`): every mantissa matches mpmath's correctly
+  rounded digits of the exact value e^ln. The decimal exponent and the mantissa come from
+  `ln · log10(e)` in double-double.
+- **Round trips** (property tests): `parse(display(x)) == x` exactly for every `x`
+  outside the float's range with |ln x| < 10¹⁵, because the default precision is the
+  shortest mantissa that parses back to the same `Log`. Inside the range `Display`
+  prints the float `to_value()`, which costs one rounding of the value.
+
+Beyond |log10 x| ≥ 2⁵² (|ln x| ≳ 10¹⁶) the stored log no longer resolves a mantissa, so
+the value is printed as a power of ten and round-trips to within an ulp of the log.
 
 ### Sums and products of many terms
 

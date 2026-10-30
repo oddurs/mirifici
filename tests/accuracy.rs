@@ -280,7 +280,7 @@ fn report_f64() {
             powf: 0.501,
             from_value: 1.0,
             to_value: 1.0,
-            log2_log10: 1.0,
+            log2_log10: 0.51,
         },
     );
 }
@@ -300,7 +300,7 @@ fn report_f32() {
             powf: 0.501,
             from_value: 1.0,
             to_value: 1.0,
-            log2_log10: 1.0,
+            log2_log10: 0.51,
         },
     );
 }

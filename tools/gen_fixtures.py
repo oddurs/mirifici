@@ -191,10 +191,67 @@ def gen(t: Type, seed: int):
     write(f"log2_log10_{t.name}.csv", ["ln", "log2_hi", "log2_lo", "log10_hi", "log10_lo"], rows)
 
 
+def sci(v, p: int) -> str:
+    """`v > 0` as d.ddd(p ≥ 1 decimals)e<k>, correctly rounded from the exact value."""
+    k = int(mpmath.floor(mpmath.log10(v)))
+    m = v / mpf(10) ** k
+    digits = mpmath.nstr(m, p + 1, strip_zeros=False, min_fixed=-1, max_fixed=2)
+    if digits.startswith("10"):
+        k += 1
+        digits = mpmath.nstr(m / 10, p + 1, strip_zeros=False, min_fixed=-1, max_fixed=2)
+    return f"{digits}e{k}"
+
+
+def gen_text(t: Type, seed: int):
+    """Parsing and formatting beyond the float's range."""
+    rng = random.Random(seed)
+    big = 10**7 if t is F64 else 10**6
+
+    # parse: decimal strings -> ln
+    rows = []
+    for _ in range(1000):
+        ndig = rng.randint(1, 25)
+        digits = str(rng.randint(1, 9)) + "".join(str(rng.randint(0, 9)) for _ in range(ndig - 1))
+        kind = rng.randrange(4)
+        if kind == 0:
+            k = rng.randint(-30, 30)
+        elif kind == 1:
+            k = rng.randint(-400, 400)
+        elif kind == 2:
+            k = rng.randint(-big, big)
+        else:
+            k = rng.choice((-1, 1)) * rng.randint(10**8, 10**15)
+        point = rng.randint(1, len(digits))
+        text = digits[:point] + ("." + digits[point:] if point < len(digits) else "")
+        exp = k - (point - 1)
+        s = f"{text}e{exp}"
+        ref = mpmath.log(mpf(text) * mpf(10) ** exp)
+        rows.append([s, *split(ref, t)])
+    write(f"parse_{t.name}.csv", ["text", "ref_hi", "ref_lo"], rows)
+
+    # display: stored ln (outside the float's range) -> mantissa digits at fixed precision
+    p = 12 if t is F64 else 5
+    lim = 745.2 if t is F64 else 103.3
+    rows = []
+    for _ in range(1000):
+        kind = rng.randrange(3)
+        if kind == 0:
+            ln = rng.uniform(lim, lim * 2) * rng.choice((-1, 1))
+        elif kind == 1:
+            ln = rng.uniform(1e3, 1e6) * rng.choice((-1, 1))
+        else:
+            ln = 10 ** rng.uniform(6, 11) * rng.choice((-1, 1))
+        ln = t.round(ln)
+        rows.append([repr(ln), str(p), sci(mpmath.exp(mpf(ln)), p)])
+    write(f"display_{t.name}.csv", ["ln", "precision", "text"], rows)
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     gen(F64, 1614)
     gen(F32, 1624)
+    gen_text(F64, 1668)
+    gen_text(F32, 1647)
 
 
 if __name__ == "__main__":

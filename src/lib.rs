@@ -11,15 +11,20 @@ extern crate std;
 
 mod add;
 mod aggregate;
+mod dd;
 mod error;
 mod float;
+mod fmt;
 mod log;
 mod ops;
+mod parse;
 mod signed;
 pub mod slice;
 
 pub use crate::add::log1mexp;
 pub use crate::error::DomainError;
 pub use crate::float::LogFloat;
+pub use crate::fmt::LogDisplay;
 pub use crate::log::Log;
+pub use crate::parse::ParseLogError;
 pub use crate::signed::SignedLog;

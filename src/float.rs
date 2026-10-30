@@ -35,6 +35,7 @@ pub(crate) mod sealed {
         + Neg<Output = Self>
         + AddAssign
         + SubAssign
+        + core::str::FromStr
     {
         const ZERO: Self;
         const ONE: Self;
@@ -49,6 +50,8 @@ pub(crate) mod sealed {
         const LN_10: Self;
         const LOG2_E: Self;
         const LOG10_E: Self;
+        /// Decimal exponents |k| for which every d.ddd·10^k is a normal float.
+        const MAX_SAFE_EXP10: f64;
 
         fn exp(self) -> Self;
         fn ln(self) -> Self;
@@ -75,7 +78,8 @@ macro_rules! impl_float {
         ln = $ln:ident,
         ln_1p = $ln_1p:ident,
         exp_m1 = $exp_m1:ident,
-        floor = $floor:ident
+        floor = $floor:ident,
+        max_safe_exp10 = $safe:literal
     ) => {
         impl LogFloat for $t {}
 
@@ -93,6 +97,7 @@ macro_rules! impl_float {
             const LN_10: Self = core::$t::consts::LN_10;
             const LOG2_E: Self = core::$t::consts::LOG2_E;
             const LOG10_E: Self = core::$t::consts::LOG10_E;
+            const MAX_SAFE_EXP10: f64 = $safe;
 
             #[inline]
             fn exp(self) -> Self {
@@ -167,7 +172,8 @@ impl_float!(
     ln = log,
     ln_1p = log1p,
     exp_m1 = expm1,
-    floor = floor
+    floor = floor,
+    max_safe_exp10 = 307.0
 );
 impl_float!(
     f32,
@@ -175,5 +181,6 @@ impl_float!(
     ln = logf,
     ln_1p = log1pf,
     exp_m1 = expm1f,
-    floor = floorf
+    floor = floorf,
+    max_safe_exp10 = 37.0
 );

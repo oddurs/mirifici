@@ -3,6 +3,7 @@
 use core::cmp::Ordering;
 use core::fmt;
 
+use crate::dd;
 use crate::error::DomainError;
 use crate::float::LogFloat;
 
@@ -147,7 +148,8 @@ impl<F: LogFloat> Log<F> {
 
     /// Creates a `Log` from its base-2 logarithm: stores `log2 · ln 2`.
     ///
-    /// The multiplication adds at most half an ulp of rounding to the stored log.
+    /// The product is formed with ln 2 to twice the float's precision, so the stored log is
+    /// within a hair over half an ulp of the exact value.
     ///
     /// # Panics
     ///
@@ -155,12 +157,14 @@ impl<F: LogFloat> Log<F> {
     #[inline]
     #[track_caller]
     pub fn from_log2(log2: F) -> Self {
-        Self::from_ln(log2 * F::LN_2)
+        Self::from_ln(F::from_f64(dd::mul_rounded(log2.to_f64(), dd::LN_2)))
     }
 
     /// Creates a `Log` from its base-10 logarithm: stores `log10 · ln 10`.
     ///
-    /// The multiplication adds at most half an ulp of rounding to the stored log.
+    /// The product is formed with ln 10 to twice the float's precision, so the stored log is
+    /// within a hair over half an ulp of the exact value, and `Log::from_log10(k)` is the same
+    /// value as `format!("1e{k}").parse()` for integer `k`.
     ///
     /// # Panics
     ///
@@ -175,7 +179,7 @@ impl<F: LogFloat> Log<F> {
     #[inline]
     #[track_caller]
     pub fn from_log10(log10: F) -> Self {
-        Self::from_ln(log10 * F::LN_10)
+        Self::from_ln(F::from_f64(dd::mul_rounded(log10.to_f64(), dd::LN_10)))
     }
 
     /// The stored natural logarithm, ln(x). Exact.
@@ -184,16 +188,18 @@ impl<F: LogFloat> Log<F> {
         self.0
     }
 
-    /// The base-2 logarithm, `ln · log2(e)`. Adds at most half an ulp of rounding.
+    /// The base-2 logarithm, `ln · log2(e)`, formed with log2(e) to twice the float's
+    /// precision: within a hair over half an ulp of the exact value.
     #[inline]
     pub fn log2(self) -> F {
-        self.0 * F::LOG2_E
+        F::from_f64(dd::mul_rounded(self.0.to_f64(), dd::LOG2_E))
     }
 
-    /// The base-10 logarithm, `ln · log10(e)`. Adds at most half an ulp of rounding.
+    /// The base-10 logarithm, `ln · log10(e)`, formed with log10(e) to twice the float's
+    /// precision: within a hair over half an ulp of the exact value.
     #[inline]
     pub fn log10(self) -> F {
-        self.0 * F::LOG10_E
+        F::from_f64(dd::mul_rounded(self.0.to_f64(), dd::LOG10_E))
     }
 
     /// The logarithm in an arbitrary base, `ln / ln(base)`.
