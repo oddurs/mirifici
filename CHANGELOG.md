@@ -6,6 +6,13 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### M7: Benchmarks
+- Criterion benchmarks in `bench/` (a separate workspace): single operations,
+  log-sum-exp on 10 / 1k / 1M elements, products, and an HMM forward pass, against plain
+  `f64`, hand-written log-space code, `logaddexp` and `logprob`.
+- `docs/performance.md`. No optimisation was needed: `Log<f64>` is within noise of
+  hand-written code.
+
 ### M6: Integrations
 - `serde`: `Serialize`/`Deserialize` for `Log` (stored log; infinities as strings in
   human-readable formats) and `SignedLog`; `serde_as_value` for value-based output.

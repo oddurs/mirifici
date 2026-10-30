@@ -68,3 +68,14 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - run: cargo doc --no-deps --all-features
+
+  bench:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - run: cargo fmt --manifest-path bench/Cargo.toml --all --check
+      - run: cargo clippy --manifest-path bench/Cargo.toml --all-targets -- -D warnings
+      - run: cargo bench --manifest-path bench/Cargo.toml --no-run
