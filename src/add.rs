@@ -18,7 +18,7 @@ use crate::log::Log;
 /// - d > ln 2: `ln_1p(−exp(−d))`, since `exp(−d) ≤ 1/2` and `ln_1p` is accurate there.
 ///
 /// Edge cases: `log1mexp(0) = −∞` and `log1mexp(∞) = 0`. Error: at most ε·max(1, |result|)
-/// (measured 0.62; see `docs/accuracy.md`).
+/// for `f64` and 1.5·ε·max(1, |result|) for `f32` (see `docs/accuracy.md`).
 ///
 /// Reference: Martin Mächler, *Accurately Computing log(1 − exp(−|a|)), Assessed by the Rmpfr
 /// package* (2012), <https://cran.r-project.org/package=Rmpfr/vignettes/log1mexp-note.pdf>.
@@ -108,7 +108,7 @@ impl<F: LogFloat> Log<F> {
     ///
     /// ```
     /// use mirifici::Log;
-    /// let a = Log::from_value(5.0);
+    /// let a = Log::from_value(5.0_f64);
     /// let b = Log::from_value(3.0);
     /// assert!((a.checked_sub(b).unwrap().to_value() - 2.0).abs() < 1e-15);
     /// assert_eq!(b.checked_sub(a), None);

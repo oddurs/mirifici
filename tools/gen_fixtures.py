@@ -28,10 +28,19 @@ def to_f32(x: float) -> float:
     return struct.unpack("f", struct.pack("f", x))[0]
 
 
-def split(v) -> tuple[str, str]:
-    """Split an mpf into hi + lo doubles (hi = nearest double)."""
+F32_MAX = 3.4028234663852886e38
+
+
+def split(v, t=None) -> tuple[str, str]:
+    """Split an mpf into hi + lo doubles (hi = nearest double).
+
+    With `t = F32`, results beyond f32's range are written as the infinity that f32
+    arithmetic overflows to.
+    """
     if mpmath.isinf(v):
         return (repr(float(v)), "0.0")
+    if t is F32 and abs(v) > F32_MAX:
+        return (repr(math.copysign(math.inf, float(v))), "0.0")
     hi = float(v)
     if math.isinf(hi):
         return (repr(hi), "0.0")
@@ -145,7 +154,7 @@ def gen(t: Type, seed: int):
     rows = []
     for _ in range(n):
         a, b = rand_ln(rng, t), rand_ln(rng, t)
-        rows.append([repr(a), repr(b), *split(mpf(a) + mpf(b)), *split(mpf(a) - mpf(b))])
+        rows.append([repr(a), repr(b), *split(mpf(a) + mpf(b), t), *split(mpf(a) - mpf(b), t)])
     write(f"muldiv_{t.name}.csv", ["a_ln", "b_ln", "mul_hi", "mul_lo", "div_hi", "div_lo"], rows)
 
     # powf
@@ -154,7 +163,7 @@ def gen(t: Type, seed: int):
         a = rand_ln(rng, t)
         p = t.round(rng.choice((rng.uniform(-10, 10), 10 ** rng.uniform(-10, 10) * rng.choice((-1, 1)))))
         ref = mpf(p) * mpf(a)
-        rows.append([repr(a), repr(p), *split(ref)])
+        rows.append([repr(a), repr(p), *split(ref, t)])
     write(f"powf_{t.name}.csv", ["a_ln", "p", "ref_hi", "ref_lo"], rows)
 
     # from_value: x -> ln(x), and to_value: ln -> exp(ln)

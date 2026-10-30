@@ -58,6 +58,30 @@ Measured with `cargo test --release --test accuracy -- --nocapture` (glibc via
 
 `sqrt` and `recip` are exact. `powi(n)` is `powf(n as F)`.
 
+## Results: `f32`
+
+Same fixtures generator, with inputs exactly representable in `f32` and ε = 2⁻²³. The
+`libm` column uses the single-precision `libm` functions (`expf`, `log1pf`, …), which are
+slightly less accurate than glibc's.
+
+| operation | cases | max E (`std`) | max E (`libm`) | documented bound |
+|---|---|---|---|---|
+| `a * b` | 2000 | 0.487 | 0.487 | 0.5 (correctly rounded) |
+| `a / b` | 2000 | 0.493 | 0.493 | 0.5 (correctly rounded) |
+| `powf` | 2000 | 0.476 | 0.476 | 0.5 (correctly rounded) |
+| `a + b` | 4000 | 0.544 | 0.514 | 1 |
+| `checked_sub` | 1506 | 1.111 | 1.111 | 2 (scale includes \|la\|) |
+| `log1mexp` | 2000 | 0.655 | 1.035 | 1.5 |
+| `Sum` (streaming), n ≤ 1000 | 170 | 0.962 | 0.962 | 2 |
+| `sum_two_pass`, n ≤ 1000 | 170 | 0.786 | 0.786 | 2 |
+| `from_value` | 2000 | 0.492 | 0.587 | 1 |
+| `to_value` (relative error) | 2000 | 0.488 | 0.537 | 1 |
+| `log2` | 2000 | 0.605 | 0.605 | 1 |
+| `log10` | 2000 | 0.644 | 0.644 | 1 |
+
+With ε ≈ 1.2·10⁻⁷, a `Log<f32>` holding 1e-30 (|ln x| ≈ 69) carries a representation
+error of up to ~4·10⁻⁶ relative. Use `f64` unless memory or bandwidth dominates.
+
 ### Sums and products of many terms
 
 The sum bounds above are for n ≤ 1000 terms. In general the accumulation in `Sum` and

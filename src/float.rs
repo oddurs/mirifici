@@ -169,3 +169,11 @@ impl_float!(
     exp_m1 = expm1,
     floor = floor
 );
+impl_float!(
+    f32,
+    exp = expf,
+    ln = logf,
+    ln_1p = log1pf,
+    exp_m1 = expm1f,
+    floor = floorf
+);

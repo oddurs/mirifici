@@ -106,6 +106,11 @@ impl Parse for f64 {
     const TY: &'static str = "f64";
 }
 
+impl Parse for f32 {
+    const EPS: f64 = f32::EPSILON as f64;
+    const TY: &'static str = "f32";
+}
+
 fn p<F: Parse>(s: &str) -> F {
     s.parse().unwrap()
 }
@@ -269,6 +274,26 @@ fn report_f64() {
             add: 1.0,
             sub: 2.0,
             log1mexp: 1.0,
+            sum_stream: 2.0,
+            sum_two_pass: 2.0,
+            muldiv: 0.501,
+            powf: 0.501,
+            from_value: 1.0,
+            to_value: 1.0,
+            log2_log10: 1.0,
+        },
+    );
+}
+
+#[test]
+fn report_f32() {
+    println!("| operation | type | cases | max E | bound |\n|---|---|---|---|---|");
+    run::<f32>(
+        fixtures!("f32"),
+        Bounds {
+            add: 1.0,
+            sub: 2.0,
+            log1mexp: 1.5,
             sum_stream: 2.0,
             sum_two_pass: 2.0,
             muldiv: 0.501,

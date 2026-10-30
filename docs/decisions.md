@@ -18,3 +18,4 @@ Choices not fixed by the design brief. Each one keeps NaN out and the API small.
 - **The log-sum-exp accumulators leave one copy of the maximum out and finish with `m + ln_1p(s)`.** Adding the maximum's `exp(0) = 1` first would round away the low bits of small corrections.
 - **`sum_two_pass` and `product_compensated` are associated functions** (`Log::sum_two_pass(&xs)`), so they do not need an extension trait.
 - **`Sum`/`Product` are also implemented for `&Log`,** so `slice.iter().sum()` works without `.copied()`.
+- **Literals sometimes need a suffix (`Log::from_value(5.0_f64)`).** With two `LogFloat` impls, a bare float literal is ambiguous when a method is called on the result before inference settles.

@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### M3: Generic floats and no_std
+- `LogFloat` implemented for `f32`; `Log<F>` is generic with `f64` as the default.
+- Math routes through `libm` when the `std` feature is off; the crate builds for
+  `thumbv7em-none-eabihf`.
+- `f32` accuracy fixtures and bounds in `docs/accuracy.md`.
+
 ### M2: Addition, subtraction, aggregation
 - `Add`, `AddAssign` (log-sum-exp), `checked_sub`, `abs_diff`, and the free function
   `log1mexp` (Mächler 2012).
