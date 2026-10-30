@@ -6,6 +6,15 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### M6: Integrations
+- `serde`: `Serialize`/`Deserialize` for `Log` (stored log; infinities as strings in
+  human-readable formats) and `SignedLog`; `serde_as_value` for value-based output.
+- `num-traits`: `Zero`, `One`, `Pow<F>`, `Pow<i32>`, `Bounded` for `Log`; `Zero`, `One` for
+  `SignedLog`.
+- `approx`: `AbsDiffEq`, `RelativeEq`, `UlpsEq` on the stored log.
+- `bytemuck`: `Pod`, `Zeroable` for `Log<f32>` and `Log<f64>` (zeroed bits are `ONE`).
+- docs.rs builds with all features.
+
 ### M5: Formatting and parsing beyond float range
 - `Display`, `LowerExp`, `UpperExp` for `Log` and `SignedLog`: identical to the float's
   output in range, scientific notation from the stored log beyond it (`1e-5000`), honouring

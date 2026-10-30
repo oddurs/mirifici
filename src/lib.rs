@@ -5,6 +5,7 @@
 //! `f64` (1e-5000, 1e+90000) remain representable and comparable.
 
 #![no_std]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 
 #[cfg(feature = "std")]
 extern crate std;
@@ -15,6 +16,7 @@ mod dd;
 mod error;
 mod float;
 mod fmt;
+mod integrations;
 mod log;
 mod ops;
 mod parse;
@@ -28,3 +30,7 @@ pub use crate::fmt::LogDisplay;
 pub use crate::log::Log;
 pub use crate::parse::ParseLogError;
 pub use crate::signed::SignedLog;
+
+#[cfg(feature = "serde")]
+#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+pub use crate::integrations::serde::serde_as_value;

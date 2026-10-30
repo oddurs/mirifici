@@ -13,6 +13,27 @@ use core::ops::{Add, AddAssign, Div, Mul, Neg, Sub, SubAssign};
 /// public API. Write `F: LogFloat` in your own generic code that wraps `Log<F>`.
 pub trait LogFloat: sealed::Float {}
 
+/// Extra bounds that integrations need from the float, empty when the feature is off.
+pub(crate) mod features {
+    #[cfg(feature = "serde")]
+    pub trait SerdeFloat: serde::Serialize + for<'de> serde::Deserialize<'de> {}
+    #[cfg(feature = "serde")]
+    impl<T: serde::Serialize + for<'de> serde::Deserialize<'de>> SerdeFloat for T {}
+    #[cfg(not(feature = "serde"))]
+    pub trait SerdeFloat {}
+    #[cfg(not(feature = "serde"))]
+    impl<T> SerdeFloat for T {}
+
+    #[cfg(feature = "approx")]
+    pub trait ApproxFloat: approx::UlpsEq<Epsilon = Self> + approx::RelativeEq {}
+    #[cfg(feature = "approx")]
+    impl<T: approx::UlpsEq<Epsilon = T> + approx::RelativeEq> ApproxFloat for T {}
+    #[cfg(not(feature = "approx"))]
+    pub trait ApproxFloat {}
+    #[cfg(not(feature = "approx"))]
+    impl<T> ApproxFloat for T {}
+}
+
 pub(crate) mod sealed {
     use super::*;
 
@@ -36,6 +57,8 @@ pub(crate) mod sealed {
         + AddAssign
         + SubAssign
         + core::str::FromStr
+        + features::SerdeFloat
+        + features::ApproxFloat
     {
         const ZERO: Self;
         const ONE: Self;

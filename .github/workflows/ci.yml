@@ -51,6 +51,7 @@ jobs:
         with:
           targets: thumbv7em-none-eabihf
       - run: cargo build --target thumbv7em-none-eabihf --no-default-features
+      - run: cargo build --target thumbv7em-none-eabihf --no-default-features --features serde,num-traits,approx,bytemuck
 
   features:
     runs-on: ubuntu-latest

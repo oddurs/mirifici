@@ -16,11 +16,28 @@ exclude = ["/.github", "/tools", "/bench"]
 default = ["std"]
 ## Use the platform's math library through `std`. Without it, `libm` is used.
 std = []
+## `Serialize`/`Deserialize` for `Log` and `SignedLog`, and the `serde_as_value` module.
+serde = ["dep:serde"]
+## `Zero`, `One`, `Pow` and `Bounded` from `num-traits`.
+num-traits = ["dep:num-traits"]
+## `AbsDiffEq`, `RelativeEq` and `UlpsEq` from `approx`, on the stored log.
+approx = ["dep:approx"]
+## `Pod` and `Zeroable` from `bytemuck`.
+bytemuck = ["dep:bytemuck"]
 
 [dependencies]
 libm = "0.2.8"
+serde = { version = "1.0.100", optional = true, default-features = false }
+num-traits = { version = "0.2.14", optional = true, default-features = false }
+approx = { version = "0.5", optional = true, default-features = false }
+bytemuck = { version = "1.7", optional = true, default-features = false }
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(docsrs)"] }
 unsafe_code = "deny"
 missing_docs = "warn"
 rust_2018_idioms = { level = "warn", priority = -1 }
@@ -30,3 +47,6 @@ float_cmp = "allow"
 
 [dev-dependencies]
 proptest = { version = "1.11.0", default-features = false, features = ["std"] }
+serde = { version = "1.0.100", features = ["derive"] }
+serde_json = { version = "1.0.154", features = ["float_roundtrip"] }
+serde_test = "1.0.177"

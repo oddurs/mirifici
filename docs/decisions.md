@@ -34,3 +34,9 @@ Choices not fixed by the design brief. Each one keeps NaN out and the API small.
 - **`log2`, `log10`, `from_log2`, `from_log10` use double-double constants.** With a plain product, `from_log10(90000.0)` was 2·10⁻¹¹ off and displayed as `1.00000000002e90000`; with it, it prints `1e90000`.
 - **`LogDisplay` ignores width and fill;** the precision flag applies to the exponent, which is the part a reader wants to control.
 - **`ParseLogError` is opaque** (no public kind enum); its message distinguishes empty, invalid, negative and NaN input.
+- **serde: infinite stored logs are strings (`"-inf"`, `"inf"`) in human-readable formats.** JSON writes infinities as `null`, which would make `Log::ZERO` unreadable; binary formats keep the raw float.
+- **`SignedLog` serializes as a `(negative, ln)` tuple,** reusing `Log`'s representation for the magnitude.
+- **`serde_as_value` writes numbers in range and scientific strings beyond it,** so in-range data stays readable by other tools while 1e-5000 survives.
+- **num-traits: `Bounded::max_value()` is `INFINITY`.** It is the greatest `Log`; a finite "largest" value would be arbitrary. `Num`, `Float`, `Signed`, `ToPrimitive` and `CheckedSub` are not implemented because their contracts assume subtraction, negatives or exact conversion. `SignedLog` gets `Zero` and `One` only.
+- **approx compares stored logs and treats identical infinities as equal,** since the float impls compute ∞ − ∞ = NaN and would report `ZERO != ZERO`.
+- **bytemuck impls are concrete (`Log<f32>`, `Log<f64>`)** and `SignedLog` is not `Pod` (it has padding).
