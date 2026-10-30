@@ -6,45 +6,73 @@ use core::iter::{Product, Sum};
 use crate::float::LogFloat;
 use crate::log::Log;
 
-/// One-pass log-sum-exp over stored logs.
+/// One-pass log-sum-exp accumulator over stored logs.
 ///
 /// Keeps a running maximum `m` and `s = Σ exp(lᵢ − m)` over every term except one occurrence
 /// of the maximum, so the result is `m + ln_1p(s)`. Leaving the maximum out of `s` keeps the
 /// full precision of small corrections. When a new maximum arrives, `s` is rescaled by
 /// `exp(m_old − m_new)` and the old maximum joins it.
-#[inline]
-pub(crate) fn sum_streaming<F: LogFloat>(iter: impl Iterator<Item = F>) -> F {
-    let mut m = F::NEG_INFINITY;
-    let mut s = F::ZERO;
-    for l in iter {
-        if l <= m {
-            if l != F::NEG_INFINITY {
-                s += (l - m).exp();
+#[derive(Clone, Copy)]
+pub(crate) struct Streaming<F> {
+    m: F,
+    s: F,
+}
+
+impl<F: LogFloat> Streaming<F> {
+    pub(crate) const NEW: Self = Self {
+        m: F::NEG_INFINITY,
+        s: F::ZERO,
+    };
+
+    #[inline]
+    pub(crate) fn push(&mut self, l: F) {
+        if l <= self.m {
+            // Skips −∞ terms, and keeps +∞ absorbing (once m = +∞ nothing changes it).
+            if l != F::NEG_INFINITY && self.m != F::INFINITY {
+                self.s += (l - self.m).exp();
             }
+        } else if l == F::INFINITY {
+            self.m = l;
         } else {
-            if l == F::INFINITY {
-                return F::INFINITY;
-            }
-            // When m is −∞ (first finite term) exp(−∞) = 0 resets s.
-            s = (s + F::ONE) * (m - l).exp();
-            m = l;
+            // When m is −∞ (first finite term) exp(−∞) = 0 resets s. A NaN `l` lands here
+            // too and propagates through `s` and `m`.
+            self.s = (self.s + F::ONE) * (self.m - l).exp();
+            self.m = l;
         }
     }
-    if m == F::NEG_INFINITY {
-        m
-    } else {
-        m + s.ln_1p()
+
+    #[inline]
+    pub(crate) fn finish(self) -> F {
+        if self.m == F::NEG_INFINITY || self.m == F::INFINITY {
+            self.m
+        } else {
+            self.m + self.s.ln_1p()
+        }
     }
+}
+
+#[inline]
+pub(crate) fn sum_streaming<F: LogFloat>(iter: impl Iterator<Item = F>) -> F {
+    let mut acc = Streaming::NEW;
+    for l in iter {
+        acc.push(l);
+    }
+    acc.finish()
 }
 
 /// Two-pass log-sum-exp: find the maximum, then sum the other terms relative to it.
 #[inline]
+#[allow(clippy::neg_cmp_op_on_partial_ord)] // deliberate: also true for NaN
 pub(crate) fn sum_two_pass_by<T, F: LogFloat>(xs: &[T], ln: impl Fn(&T) -> F) -> F {
     let mut m = F::NEG_INFINITY;
     let mut at = 0;
     for (i, x) in xs.iter().enumerate() {
         let l = ln(x);
-        if l > m {
+        // `!(l <= m)` is "l > m or l is NaN"; the NaN test stays off the common path.
+        if !(l <= m) {
+            if l.is_nan() {
+                return l;
+            }
             m = l;
             at = i;
         }

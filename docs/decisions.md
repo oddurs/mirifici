@@ -19,3 +19,11 @@ Choices not fixed by the design brief. Each one keeps NaN out and the API small.
 - **`sum_two_pass` and `product_compensated` are associated functions** (`Log::sum_two_pass(&xs)`), so they do not need an extension trait.
 - **`Sum`/`Product` are also implemented for `&Log`,** so `slice.iter().sum()` works without `.copied()`.
 - **Literals sometimes need a suffix (`Log::from_value(5.0_f64)`).** With two `LogFloat` impls, a bare float literal is ambiguous when a method is called on the result before inference settles.
+- **No `alloc` feature.** None of the slice utilities allocates (they work in place or reduce), so they are available everywhere; a feature that gates nothing would be noise.
+- **Raw-log slice functions do not validate input.** NaN in gives NaN out (reductions) or `None` with the slice untouched (in-place functions); validating every element would cost a pass for data that is normally clean.
+- **In-place normalisers return `Option` of the normaliser.** The normaliser is what a scaled forward algorithm accumulates, and `None` (with the slice untouched) covers the empty / all-zero / infinite cases without NaN.
+- **Zero weights exclude their term in weighted means,** even if the value is infinite; that is what a weight of zero means, and it avoids 0·∞.
+- **`SignedLog` stores zero with a positive sign,** so there is no −0 and `==`, ordering and `TryFrom<SignedLog> for Log` behave without special cases.
+- **A non-zero `SignedLog` divided by zero is an infinity with the numerator's sign,** because zero carries no sign.
+- **`SignedLog`'s `Sum` accumulates positive and negative terms separately and subtracts once,** so cancellation happens once rather than at every sign change.
+- **`SignedLog` has no powers or roots.** Fractional powers of negative numbers leave the reals; take them on the magnitude.

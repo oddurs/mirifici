@@ -6,6 +6,13 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### M4: Slices and `SignedLog`
+- `mirifici::slice`: `logsumexp`, `log_softmax_in_place`, `softmax_in_place`,
+  `log_mean_exp`, `log_mean_exp_weighted` on raw logs; `normalize_in_place`, `mean`,
+  `mean_weighted` on `Log` slices. No allocation, no feature gate.
+- `SignedLog<F>` with `Add`, `Sub`, `Mul`, `Div`, `Neg` (plus assign/reference forms),
+  `checked_*`, `Sum`, `Product`, ordering, `From<Log>` and `TryFrom<SignedLog> for Log`.
+
 ### M3: Generic floats and no_std
 - `LogFloat` implemented for `f32`; `Log<F>` is generic with `f64` as the default.
 - Math routes through `libm` when the `std` feature is off; the crate builds for

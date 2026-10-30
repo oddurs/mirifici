@@ -15,8 +15,11 @@ mod error;
 mod float;
 mod log;
 mod ops;
+mod signed;
+pub mod slice;
 
 pub use crate::add::log1mexp;
 pub use crate::error::DomainError;
 pub use crate::float::LogFloat;
 pub use crate::log::Log;
+pub use crate::signed::SignedLog;

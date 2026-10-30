@@ -107,3 +107,28 @@ proptest! {
         prop_assert!(!(a + b).ln().is_nan());
     }
 }
+
+fn any_signed() -> impl Strategy<Value = mirifici::SignedLog<f64>> {
+    (any::<bool>(), finite_log()).prop_map(|(neg, m)| mirifici::SignedLog::new(neg, m))
+}
+
+proptest! {
+    #[test]
+    fn signed_add_commutes(a in any_signed(), b in any_signed()) {
+        prop_assert_eq!(a.checked_add(b), b.checked_add(a));
+    }
+
+    #[test]
+    fn signed_neg_is_involution(a in any_signed()) {
+        prop_assert_eq!(-(-a), a);
+        prop_assert_eq!(a - a, mirifici::SignedLog::ZERO);
+    }
+
+    #[test]
+    fn signed_mul_sign_rule(a in any_signed(), b in any_signed()) {
+        let p = a * b;
+        if p != mirifici::SignedLog::ZERO {
+            prop_assert_eq!(p.is_negative(), a.is_negative() != b.is_negative());
+        }
+    }
+}

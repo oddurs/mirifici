@@ -24,7 +24,7 @@ use crate::float::LogFloat;
 ///
 /// There is deliberately no `Sub` operator, because a − b leaves the domain when b > a. Use
 /// [`checked_sub`](Log::checked_sub), [`abs_diff`](Log::abs_diff), or
-/// `SignedLog` (milestone 4).
+/// [`SignedLog`](crate::SignedLog).
 ///
 /// # NaN policy
 ///
