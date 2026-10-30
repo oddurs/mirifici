@@ -95,6 +95,7 @@
 //! (Princeton, 1994).
 
 #![no_std]
+#![deny(missing_docs)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
 #[cfg(feature = "std")]

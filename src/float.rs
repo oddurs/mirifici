@@ -65,14 +65,9 @@ pub(crate) mod sealed {
         const HALF: Self;
         const INFINITY: Self;
         const NEG_INFINITY: Self;
-        const EPSILON: Self;
-        const MAX: Self;
         const MIN_POSITIVE: Self;
         const E: Self;
         const LN_2: Self;
-        const LN_10: Self;
-        const LOG2_E: Self;
-        const LOG10_E: Self;
         /// Decimal exponents |k| for which every d.ddd·10^k is a normal float.
         const MAX_SAFE_EXP10: f64;
 
@@ -80,7 +75,6 @@ pub(crate) mod sealed {
         fn ln(self) -> Self;
         fn ln_1p(self) -> Self;
         fn exp_m1(self) -> Self;
-        fn floor(self) -> Self;
         fn abs(self) -> Self;
         fn is_nan(self) -> bool;
         fn is_finite(self) -> bool;
@@ -101,7 +95,6 @@ macro_rules! impl_float {
         ln = $ln:ident,
         ln_1p = $ln_1p:ident,
         exp_m1 = $exp_m1:ident,
-        floor = $floor:ident,
         max_safe_exp10 = $safe:literal
     ) => {
         impl LogFloat for $t {}
@@ -112,14 +105,9 @@ macro_rules! impl_float {
             const HALF: Self = 0.5;
             const INFINITY: Self = $t::INFINITY;
             const NEG_INFINITY: Self = $t::NEG_INFINITY;
-            const EPSILON: Self = $t::EPSILON;
-            const MAX: Self = $t::MAX;
             const MIN_POSITIVE: Self = $t::MIN_POSITIVE;
             const E: Self = core::$t::consts::E;
             const LN_2: Self = core::$t::consts::LN_2;
-            const LN_10: Self = core::$t::consts::LN_10;
-            const LOG2_E: Self = core::$t::consts::LOG2_E;
-            const LOG10_E: Self = core::$t::consts::LOG10_E;
             const MAX_SAFE_EXP10: f64 = $safe;
 
             #[inline]
@@ -149,13 +137,6 @@ macro_rules! impl_float {
                 return $t::exp_m1(self);
                 #[cfg(not(feature = "std"))]
                 return libm::$exp_m1(self);
-            }
-            #[inline]
-            fn floor(self) -> Self {
-                #[cfg(feature = "std")]
-                return $t::floor(self);
-                #[cfg(not(feature = "std"))]
-                return libm::$floor(self);
             }
             #[inline]
             fn abs(self) -> Self {
@@ -195,7 +176,6 @@ impl_float!(
     ln = log,
     ln_1p = log1p,
     exp_m1 = expm1,
-    floor = floor,
     max_safe_exp10 = 307.0
 );
 impl_float!(
@@ -204,6 +184,5 @@ impl_float!(
     ln = logf,
     ln_1p = log1pf,
     exp_m1 = expm1f,
-    floor = floorf,
     max_safe_exp10 = 37.0
 );

@@ -167,9 +167,9 @@ impl<F: LogFloat> FromStr for Log<F> {
     /// Inside the float's normal range the string is parsed by `F` itself and then
     /// converted, so `s.parse::<Log>()` equals `Log::from_value(s.parse::<f64>())` exactly.
     ///
-    /// `-0` parses to zero. Magnitudes beyond the range of `Log<F>` itself (|ln x| above
-    /// `F::MAX`, e.g. `1e1e400`'s worth of digits) saturate to `ZERO` or `INFINITY`, as
-    /// float parsing saturates.
+    /// `-0` parses to zero. Magnitudes beyond the range of `Log<F>` itself (|ln x| above the
+    /// largest finite `F`; for `f64`, decimal exponents beyond about ±7.8·10³⁰⁷) saturate to
+    /// `ZERO` or `INFINITY`, as float parsing saturates.
     ///
     /// # Errors
     ///

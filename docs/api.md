@@ -1,8 +1,9 @@
 # Public API (0.1)
 
-This is the API sketch agreed before implementation. Signatures are abbreviated; every
-item is documented in rustdoc with its exact formula, edge cases and error bound.
-Checked against the semantics in the design brief: see "Semantics checklist" at the end.
+This page started as the API sketch agreed before implementation (M0) and has been kept in
+step with the code; the differences from the original sketch are listed at the end.
+Signatures are abbreviated; every item is documented in rustdoc with its exact formula,
+edge cases and error bound.
 
 ```rust
 // ---- the float trait ------------------------------------------------------------
@@ -67,9 +68,9 @@ pub fn log1mexp<F: LogFloat>(d: F) -> F;                     // ln(1 - e^-d), d 
 // Display, LowerExp, UpperExp, FromStr. No Sub, no Neg, no Ord, no Hash.
 
 #[non_exhaustive]
-pub enum DomainError { Negative, NaN }
-pub struct ParseLogError { /* opaque */ }
-pub struct LogDisplay<F> { /* adapter */ }
+pub enum DomainError { Negative, NaN }                       // Display + core::error::Error
+pub struct ParseLogError { /* opaque */ }                    // Display + core::error::Error
+pub struct LogDisplay<F> { /* adapter */ }                   // Display
 
 // ---- signed values ----------------------------------------------------------------
 #[derive(Clone, Copy)]
@@ -103,8 +104,13 @@ pub mod slice {
 }
 
 // ---- integrations (feature-gated) --------------------------------------------------
-// serde:      Serialize/Deserialize as the stored log; `serde_as_value` module for `with =`.
-// num-traits: Zero, One, Pow<F>, Pow<i32>, Bounded.
+// serde:      Serialize/Deserialize as the stored log ("-inf"/"inf" strings in
+//             human-readable formats); SignedLog as (negative, ln).
+pub mod serde_as_value {                                     // #[serde(with = "...")]
+    pub fn serialize<F, S>(x: &Log<F>, s: S) -> Result<S::Ok, S::Error>;
+    pub fn deserialize<'de, F, D>(d: D) -> Result<Log<F>, D::Error>;
+}
+// num-traits: Zero, One, Pow<F>, Pow<i32>, Bounded for Log; Zero, One for SignedLog.
 // approx:     AbsDiffEq, RelativeEq, UlpsEq on the stored log.
 // bytemuck:   Pod, Zeroable (all-zero bits = ONE).
 ```
@@ -128,3 +134,10 @@ pub mod slice {
 | PartialEq/PartialOrd on the log, `total_cmp`, Ord only on a wrapper if at all | no wrapper; see decisions.md |
 | ln/log2/log10/log, saturating `to_value`, `try_to_value` | yes |
 | sealed `LogFloat` for f32/f64, no `num_traits::Float` bound | yes |
+
+## Changes from the M0 sketch
+
+- `log2`, `log10`, `from_log2` and `from_log10` use double-double constants (M5), which
+  changed their accuracy, not their signatures.
+- `SignedLog` gained `total_cmp`, and `num-traits` `Zero`/`One` (M4, M6).
+- No item was removed.

@@ -6,7 +6,44 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
-### M8: The canon
+## [0.1.0] - not yet published
+
+First release.
+
+### Added
+
+- `Log<F>` for `F = f32 | f64` (default `f64`): a non-negative number stored as its
+  natural logarithm, the size of `F`. Constants `ZERO`, `ONE`, `INFINITY`; checked and
+  unchecked constructors from values and logarithms in base e, 2 and 10; accessors
+  `ln`, `log2`, `log10`, `log`, `to_value`, `try_to_value`.
+- Arithmetic on values: `*`, `/`, `+` (log-sum-exp) with assign and reference forms;
+  `checked_mul`, `checked_div`, `checked_sub`, `abs_diff`, `powf`, `powi`, `sqrt`,
+  `recip`; `log1mexp` (Mächler 2012). No `-` operator; no NaN from valid inputs.
+- Aggregation: streaming `Sum`, `Log::sum_two_pass`, `Product`,
+  `Log::product_compensated` (Neumaier).
+- Ordering: `PartialEq`, `PartialOrd`, `total_cmp`, `max`, `min`.
+- `SignedLog<F>`: sign plus `Log` magnitude with `+`, `-`, `*`, `/`, unary `-`, `Sum`,
+  `Product`, conversions to and from `Log`.
+- `slice`: `logsumexp`, `log_softmax_in_place`, `softmax_in_place`, `log_mean_exp`,
+  `log_mean_exp_weighted`, `normalize_in_place`, `mean`, `mean_weighted`.
+- Text beyond the float's range: `Display`, `LowerExp`, `UpperExp`, `FromStr`
+  (`"2.5e-90210"`), `LogDisplay` (`"2^-1024.5"`).
+- Optional integrations: `serde` (with `serde_as_value`), `num-traits`, `approx`,
+  `bytemuck`.
+- `#![no_std]`, no allocation, `libm` without `std`. MSRV 1.85.
+- Accuracy suite against 60-digit mpmath fixtures, property tests, Criterion
+  benchmarks, four examples, and documentation with sourced history notes.
+
+### Development history
+
+The release was built in milestones, each ending with every check in `tools/ci.sh` passing.
+
+#### M9: Release preparation
+- API audit: `#![deny(missing_docs)]`, unused internal float constants removed, `ln` is a
+  `const fn`, `docs/api.md` brought in line with the code.
+- docs.rs metadata, finalised changelog, `docs/release.md` checklist.
+
+#### M8: The canon
 - Crate documentation opens with the history of the problem logarithms solved, the
   guarantees, an overview and the feature table.
 - Sourced history notes beside the API they illuminate: Napier (`Log`), Bürgi
@@ -16,14 +53,14 @@ All notable changes to this project are documented here. The format follows
 - README with a motivating example (run as a doctest), guarantees, accuracy table,
   features and a note on the name.
 
-### M7: Benchmarks
+#### M7: Benchmarks
 - Criterion benchmarks in `bench/` (a separate workspace): single operations,
   log-sum-exp on 10 / 1k / 1M elements, products, and an HMM forward pass, against plain
   `f64`, hand-written log-space code, `logaddexp` and `logprob`.
 - `docs/performance.md`. No optimisation was needed: `Log<f64>` is within noise of
   hand-written code.
 
-### M6: Integrations
+#### M6: Integrations
 - `serde`: `Serialize`/`Deserialize` for `Log` (stored log; infinities as strings in
   human-readable formats) and `SignedLog`; `serde_as_value` for value-based output.
 - `num-traits`: `Zero`, `One`, `Pow<F>`, `Pow<i32>`, `Bounded` for `Log`; `Zero`, `One` for
@@ -32,7 +69,7 @@ All notable changes to this project are documented here. The format follows
 - `bytemuck`: `Pod`, `Zeroable` for `Log<f32>` and `Log<f64>` (zeroed bits are `ONE`).
 - docs.rs builds with all features.
 
-### M5: Formatting and parsing beyond float range
+#### M5: Formatting and parsing beyond float range
 - `Display`, `LowerExp`, `UpperExp` for `Log` and `SignedLog`: identical to the float's
   output in range, scientific notation from the stored log beyond it (`1e-5000`), honouring
   precision, width, fill, alignment, `+` and `0`.
@@ -42,27 +79,27 @@ All notable changes to this project are documented here. The format follows
 - `log2`, `log10`, `from_log2`, `from_log10` now use double-double constants (≤ 0.5 ulp).
 - Parse/display fixtures and round-trip property tests.
 
-### M4: Slices and `SignedLog`
+#### M4: Slices and `SignedLog`
 - `mirifici::slice`: `logsumexp`, `log_softmax_in_place`, `softmax_in_place`,
   `log_mean_exp`, `log_mean_exp_weighted` on raw logs; `normalize_in_place`, `mean`,
   `mean_weighted` on `Log` slices. No allocation, no feature gate.
 - `SignedLog<F>` with `Add`, `Sub`, `Mul`, `Div`, `Neg` (plus assign/reference forms),
   `checked_*`, `Sum`, `Product`, ordering, `From<Log>` and `TryFrom<SignedLog> for Log`.
 
-### M3: Generic floats and no_std
+#### M3: Generic floats and no_std
 - `LogFloat` implemented for `f32`; `Log<F>` is generic with `f64` as the default.
 - Math routes through `libm` when the `std` feature is off; the crate builds for
   `thumbv7em-none-eabihf`.
 - `f32` accuracy fixtures and bounds in `docs/accuracy.md`.
 
-### M2: Addition, subtraction, aggregation
+#### M2: Addition, subtraction, aggregation
 - `Add`, `AddAssign` (log-sum-exp), `checked_sub`, `abs_diff`, and the free function
   `log1mexp` (Mächler 2012).
 - Streaming `Sum`, `Log::sum_two_pass`, `Product`, `Log::product_compensated` (Neumaier).
 - mpmath fixtures (`tools/gen_fixtures.py`, `tests/fixtures/`), accuracy tests, property
   tests, and `docs/accuracy.md`.
 
-### M1: Core type (f64)
+#### M1: Core type (f64)
 - `Log<f64>` with `ZERO`, `ONE`, `INFINITY`; `from_value`, `try_from_value`, `from_ln`,
   `try_from_ln`, `from_ln_unchecked`, `from_log2`, `from_log10`.
 - Accessors `ln`, `log2`, `log10`, `log`, saturating `to_value`, `try_to_value`.
@@ -71,7 +108,7 @@ All notable changes to this project are documented here. The format follows
 - `PartialEq`, `PartialOrd`, `total_cmp`, `max`, `min`, `Debug`, `Default`.
 - `DomainError`.
 
-### M0: Scaffold
+#### M0: Scaffold
 - Cargo project, dual MIT/Apache-2.0 licences, `rustfmt.toml`, `clippy.toml`.
 - CI: fmt, clippy, tests on stable and MSRV (1.85), no_std build for
   `thumbv7em-none-eabihf`, feature powerset with `cargo hack`.

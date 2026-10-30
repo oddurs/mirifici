@@ -197,7 +197,7 @@ impl<F: LogFloat> Log<F> {
     /// Antonio de Sarasa observed that this makes the area a logarithm. ln(x) is that area,
     /// from 1 to x.
     #[inline]
-    pub fn ln(self) -> F {
+    pub const fn ln(self) -> F {
         self.0
     }
 
