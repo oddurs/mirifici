@@ -17,8 +17,10 @@ use crate::log::Log;
 /// - d ≤ ln 2: `ln(−expm1(−d))`, since `expm1` is accurate near 0;
 /// - d > ln 2: `ln_1p(−exp(−d))`, since `exp(−d) ≤ 1/2` and `ln_1p` is accurate there.
 ///
-/// Edge cases: `log1mexp(0) = −∞` and `log1mexp(∞) = 0`. Error: at most ε·max(1, |result|)
-/// for `f64` and 1.5·ε·max(1, |result|) for `f32` (see `docs/accuracy.md`).
+/// Edge cases: `log1mexp(0) = −∞` and `log1mexp(∞) = 0`. Error: at most
+/// 1.5·ε·max(1, |result|), given a math library whose `expm1`, `exp`, `ln` and `ln_1p` are
+/// within one ulp (measured 0.5–1.25 across glibc, `libm` and the Windows C runtime; see
+/// `docs/accuracy.md`).
 ///
 /// Reference: Martin Mächler, *Accurately Computing log(1 − exp(−|a|)), Assessed by the Rmpfr
 /// package* (2012), <https://cran.r-project.org/package=Rmpfr/vignettes/log1mexp-note.pdf>.

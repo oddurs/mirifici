@@ -48,7 +48,7 @@ Measured with `cargo test --release --test accuracy -- --nocapture` (glibc via
 | `powf` | 2000 | 0.477 | 0.477 | 0.5 (correctly rounded) |
 | `a + b` | 4000 | 0.751 | 0.663 | 1 |
 | `checked_sub` | 1510 | 0.854 | 0.854 | 2 (scale includes \|la\|) |
-| `log1mexp` | 2000 | 0.524 | 0.624 | 1 |
+| `log1mexp` | 2000 | 0.524 | 0.624 | 1.5 |
 | `Sum` (streaming), n ≤ 1000 | 170 | 1.067 | 1.067 | 2 |
 | `sum_two_pass`, n ≤ 1000 | 170 | 1.067 | 1.067 | 2 |
 | `from_value` | 2000 | 0.492 | 0.492 | 1 |
