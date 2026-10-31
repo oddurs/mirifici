@@ -43,7 +43,8 @@ jobs:
           components: clippy
       - uses: Swatinem/rust-cache@v2
       - run: cargo clippy --all-targets --all-features -- -D warnings
-      - run: cargo clippy --all-targets --no-default-features -- -D warnings
+      - run: cargo clippy --all-targets --no-default-features --features libm -- -D warnings
+      - run: cargo clippy --all-targets --features serde,num-traits,approx,bytemuck -- -D warnings
       - run: cargo clippy --manifest-path fuzz/Cargo.toml -- -D warnings
 
   test:
@@ -64,11 +65,15 @@ jobs:
         with:
           toolchain: ${{ matrix.toolchain }}
       - uses: Swatinem/rust-cache@v2
+      # The platform math library (the default), with every integration.
+      - run: cargo test --features serde,num-traits,approx,bytemuck
+      # The pure-Rust libm, including the cross-platform reproducibility hash.
       - run: cargo test --all-features
-      - run: cargo test --no-default-features
-      - run: cargo test --release --all-features --test robustness
+      - run: cargo test --no-default-features --features libm
+      - run: cargo test --release --features serde,num-traits,approx,bytemuck --test robustness
       # --nocapture prints the per-platform accuracy table into the job log.
-      - run: cargo test --release --all-features --test accuracy -- --nocapture
+      - run: cargo test --release --test accuracy -- --nocapture
+      - run: cargo test --release --features libm --test accuracy --test reproducible -- --nocapture
       - name: run examples (each checks its own results)
         shell: bash
         run: for e in hmm_forward likelihood briggs_table benford; do cargo run --release --example "$e"; done
@@ -83,8 +88,8 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
-      - run: cargo build --target ${{ matrix.target }} --no-default-features
-      - run: cargo build --target ${{ matrix.target }} --no-default-features --features serde,num-traits,approx,bytemuck
+      - run: cargo build --target ${{ matrix.target }} --no-default-features --features libm
+      - run: cargo build --target ${{ matrix.target }} --no-default-features --features libm,serde,num-traits,approx,bytemuck
 
   features:
     runs-on: ubuntu-latest
@@ -93,8 +98,9 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: taiki-e/install-action@cargo-hack
       - uses: Swatinem/rust-cache@v2
-      - run: cargo hack check --feature-powerset --no-dev-deps
-      - run: cargo hack test --feature-powerset --lib --tests
+      # Every combination with a math library; without one the crate refuses to build.
+      - run: cargo hack check --feature-powerset --at-least-one-of std,libm --no-dev-deps
+      - run: cargo hack test --feature-powerset --at-least-one-of std,libm --lib --tests
 
   miri:
     runs-on: ubuntu-latest
@@ -104,8 +110,9 @@ jobs:
         with:
           components: miri
       # The crate's only unsafe code is the bytemuck impls; the integration and core
-      # tests exercise them and the transparent layout.
-      - run: cargo miri test --all-features --test integrations --test core --test signed
+      # tests exercise them and the transparent layout. Default math backend: `libm`'s
+      # fma detects the CPU with inline assembly, which Miri cannot run.
+      - run: cargo miri test --features serde,num-traits,approx,bytemuck --test integrations --test core --test signed
         env:
           # Miri perturbs transcendental results by default; the tests check exact values.
           MIRIFLAGS: -Zmiri-strict-provenance -Zmiri-deterministic-floats
@@ -132,7 +139,10 @@ jobs:
         with:
           tool: cargo-fuzz
       # The prebuilt cargo-fuzz defaults to the musl target; fuzz on the host target.
-      - run: cargo fuzz run --target x86_64-unknown-linux-gnu ${{ matrix.target }} -- -max_total_time=60
+      # One minute per target on every push; ten on the weekly schedule.
+      - run: >-
+          cargo fuzz run --target x86_64-unknown-linux-gnu ${{ matrix.target }} --
+          -max_total_time=${{ github.event_name == 'schedule' && 600 || 60 }}
         working-directory: fuzz
 
   coverage:
@@ -165,3 +175,52 @@ jobs:
         run: |
           cargo package --list > "$RUNNER_TEMP/files.txt"
           ! grep -E '^(bench|fuzz|tools|\.github)/' "$RUNNER_TEMP/files.txt"
+
+  minimal-versions:
+    # Downstream lock files may hold the oldest versions Cargo.toml allows; build with them.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@nightly
+      - uses: taiki-e/install-action@cargo-hack
+      - run: cargo hack --remove-dev-deps
+      - run: cargo update -Z direct-minimal-versions
+      - run: cargo check --features serde,num-traits,approx,bytemuck
+      - run: cargo check --no-default-features --features libm,serde,num-traits,approx,bytemuck
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "1.85"
+      - run: cargo +1.85 check --features serde,num-traits,approx,bytemuck
+
+  deny:
+    # Licences, security advisories, banned and duplicate crates, and sources.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: EmbarkStudios/cargo-deny-action@v2
+
+  fixtures:
+    # The committed references must be exactly what the generator produces.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - run: pip install -r tools/requirements.txt
+      - run: python3 tools/gen_fixtures.py
+      - run: git diff --exit-code tests/fixtures
+
+  semver:
+    # On pull requests: no accidental breaking change to the public API.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-semver-checks
+      - run: cargo semver-checks --baseline-rev origin/${{ github.base_ref }}

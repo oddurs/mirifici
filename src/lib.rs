@@ -69,13 +69,16 @@
 //!
 //! | feature | default | |
 //! |---|---|---|
-//! | `std` | yes | use the platform math library; without it the crate is `no_std` and uses `libm` |
+//! | `std` | yes | use the platform math library (glibc, Apple libm, Windows UCRT) |
+//! | `libm` | no | use the pure-Rust `libm` instead: results bit-for-bit identical on every platform; required without `std` (`#![no_std]`) |
 //! | `serde` | no | `Serialize`/`Deserialize` for `Log` and `SignedLog`, and [`serde_as_value`] |
 //! | `num-traits` | no | `Zero`, `One`, `Pow`, `Bounded` |
 //! | `approx` | no | `AbsDiffEq`, `RelativeEq`, `UlpsEq` on the stored log |
 //! | `bytemuck` | no | `Pod`, `Zeroable` for `Log<f32>` and `Log<f64>` |
 //!
-//! The crate never allocates.
+//! The crate never allocates. One of `std` or `libm` must be enabled. What counts as a
+//! breaking change (including accuracy bounds, the serialized form and, with `libm`, exact
+//! results) is set out in `docs/stability.md`.
 //!
 //! # A note on the name
 //!
@@ -98,8 +101,14 @@
 #![deny(missing_docs)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
-#[cfg(feature = "std")]
+#[cfg(all(feature = "std", not(feature = "libm")))]
 extern crate std;
+
+#[cfg(not(any(feature = "std", feature = "libm")))]
+compile_error!(
+    "mirifici needs a math library: enable the `std` feature (the default) or the `libm` \
+     feature (for no_std, or for results that are identical on every platform)"
+);
 
 mod add;
 mod aggregate;

@@ -14,8 +14,11 @@ exclude = ["/.github", "/tools", "/bench", "/fuzz", "*.proptest-regressions"]
 
 [features]
 default = ["std"]
-## Use the platform's math library through `std`. Without it, `libm` is used.
+## Use the platform's math library (glibc, Apple libm, the Windows UCRT) through `std`.
 std = []
+## Use the pure-Rust `libm` for all math, even when `std` is enabled. Results are then
+## bit-for-bit identical on every platform. Required when `std` is disabled.
+libm = ["dep:libm"]
 ## `Serialize`/`Deserialize` for `Log` and `SignedLog`, and the `serde_as_value` module.
 serde = ["dep:serde"]
 ## `Zero`, `One`, `Pow` and `Bounded` from `num-traits`.
@@ -26,11 +29,11 @@ approx = ["dep:approx"]
 bytemuck = ["dep:bytemuck"]
 
 [dependencies]
-libm = "0.2.8"
+libm = { version = "0.2.8", optional = true }
 serde = { version = "1.0.100", optional = true, default-features = false }
 num-traits = { version = "0.2.14", optional = true, default-features = false }
-approx = { version = "0.5", optional = true, default-features = false }
-bytemuck = { version = "1.7", optional = true, default-features = false }
+approx = { version = "0.5.0", optional = true, default-features = false }
+bytemuck = { version = "1.7.2", optional = true, default-features = false }
 
 [package.metadata.docs.rs]
 all-features = true

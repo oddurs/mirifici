@@ -104,6 +104,7 @@ pub mod slice {
 }
 
 // ---- integrations (feature-gated) --------------------------------------------------
+// libm:       route all math through the pure-Rust libm (bit-reproducible; required for no_std).
 // serde:      Serialize/Deserialize as the stored log ("-inf"/"inf" strings in
 //             human-readable formats); SignedLog as (negative, ln).
 pub mod serde_as_value {                                     // #[serde(with = "...")]

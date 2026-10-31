@@ -20,7 +20,23 @@ All notable changes to this project are documented here. The format follows
 - `LogDisplay` in base 10 or 2 was less accurate than `log10()`/`log2()`.
 - `powf`, `powi` and `sqrt` could store `-0.0`.
 
+### Changed
+- `libm` is now an optional feature. `no_std` users enable it with
+  `default-features = false, features = ["libm"]`; a build with neither `std` nor `libm`
+  fails with an explanatory error. Enabling `libm` together with `std` routes all math
+  through `libm`, for results that are bit-for-bit identical on every platform.
+- `log1mexp`'s documented bound is 1.5 for `f64` (was 1), matching what the formula
+  supports with a math library accurate to one ulp; the Windows UCRT measures 1.25.
+
 ### Added
+- `docs/stability.md`: what counts as a breaking change, and the check behind each
+  promise.
+- `tests/reproducible.rs`: a hash over a battery of results under `libm`, checked on
+  Linux x86-64, macOS arm64 and Windows.
+- `tests/wire_format.rs`: serialized documents frozen at 0.1.0.
+- CI: builds at the minimal versions allowed by `Cargo.toml`, `cargo-deny` (`deny.toml`),
+  fixture regeneration check (pinned mpmath), `cargo-semver-checks` on pull requests,
+  ten-minute fuzzing on the weekly schedule.
 - `SignedLog::try_to_value`; lossless `From<Log<f32>> for Log<f64>` and for `SignedLog`.
 - `#[must_use]` on pure functions.
 - Robustness property tests over all bit patterns and arbitrary strings; `cargo-fuzz`

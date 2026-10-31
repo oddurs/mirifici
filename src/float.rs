@@ -117,30 +117,30 @@ macro_rules! impl_float {
 
             #[inline]
             fn exp(self) -> Self {
-                #[cfg(feature = "std")]
+                #[cfg(all(feature = "std", not(feature = "libm")))]
                 return $t::exp(self);
-                #[cfg(not(feature = "std"))]
+                #[cfg(feature = "libm")]
                 return libm::$exp(self);
             }
             #[inline]
             fn ln(self) -> Self {
-                #[cfg(feature = "std")]
+                #[cfg(all(feature = "std", not(feature = "libm")))]
                 return $t::ln(self);
-                #[cfg(not(feature = "std"))]
+                #[cfg(feature = "libm")]
                 return libm::$ln(self);
             }
             #[inline]
             fn ln_1p(self) -> Self {
-                #[cfg(feature = "std")]
+                #[cfg(all(feature = "std", not(feature = "libm")))]
                 return $t::ln_1p(self);
-                #[cfg(not(feature = "std"))]
+                #[cfg(feature = "libm")]
                 return libm::$ln_1p(self);
             }
             #[inline]
             fn exp_m1(self) -> Self {
-                #[cfg(feature = "std")]
+                #[cfg(all(feature = "std", not(feature = "libm")))]
                 return $t::exp_m1(self);
-                #[cfg(not(feature = "std"))]
+                #[cfg(feature = "libm")]
                 return libm::$exp_m1(self);
             }
             #[inline]

@@ -17,7 +17,7 @@ macOS and Windows.
 1. State the formula and its edge cases in the rustdoc, as the existing items do.
 2. If accuracy can change, regenerate and re-check the references:
    ```sh
-   pip install mpmath
+   pip install -r tools/requirements.txt   # pinned, so fixtures are reproducible
    python3 tools/gen_fixtures.py               # deterministic; must not change existing rows
    cargo test --release --test accuracy -- --nocapture
    ```
@@ -26,7 +26,11 @@ macOS and Windows.
 3. Never let NaN out. Every new operation needs a test for ±0, ±∞, and the largest and
    smallest finite stored logs, and should be added to `tests/robustness.rs` and
    `fuzz/fuzz_targets/arith.rs`.
-4. Record any semantic choice the brief did not fix in `docs/decisions.md`, with one
+4. If results under the `libm` feature change, `tests/reproducible.rs` fails. Update its
+   expected hash only together with a changelog entry saying which results changed and
+   why (see `docs/stability.md`).
+5. Never change the serialized form: `tests/wire_format.rs` must keep passing unchanged.
+6. Record any semantic choice the brief did not fix in `docs/decisions.md`, with one
    sentence of reasoning.
 
 ## Fuzzing locally

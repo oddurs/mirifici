@@ -39,7 +39,8 @@ bounds below on every CI run, with both the `std` math library and `libm`.
 ## Results: `f64`
 
 Measured with `cargo test --release --test accuracy -- --nocapture` (glibc via
-`std`; the `libm` column is `--no-default-features`).
+`std`; the `libm` column is `--features libm`, whose results are identical on every
+platform).
 
 | operation | cases | max E (`std`) | max E (`libm`) | documented bound |
 |---|---|---|---|---|

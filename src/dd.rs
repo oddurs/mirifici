@@ -23,33 +23,33 @@ pub(crate) const LN_2: (f64, f64) = (LN_2_HI, 2.3190468138462996e-17);
 
 #[inline]
 fn fma(a: f64, b: f64, c: f64) -> f64 {
-    #[cfg(feature = "std")]
+    #[cfg(all(feature = "std", not(feature = "libm")))]
     return a.mul_add(b, c);
-    #[cfg(not(feature = "std"))]
+    #[cfg(feature = "libm")]
     return libm::fma(a, b, c);
 }
 
 #[inline]
 pub(crate) fn exp(x: f64) -> f64 {
-    #[cfg(feature = "std")]
+    #[cfg(all(feature = "std", not(feature = "libm")))]
     return x.exp();
-    #[cfg(not(feature = "std"))]
+    #[cfg(feature = "libm")]
     return libm::exp(x);
 }
 
 #[inline]
 pub(crate) fn ln(x: f64) -> f64 {
-    #[cfg(feature = "std")]
+    #[cfg(all(feature = "std", not(feature = "libm")))]
     return x.ln();
-    #[cfg(not(feature = "std"))]
+    #[cfg(feature = "libm")]
     return libm::log(x);
 }
 
 #[inline]
 pub(crate) fn floor(x: f64) -> f64 {
-    #[cfg(feature = "std")]
+    #[cfg(all(feature = "std", not(feature = "libm")))]
     return x.floor();
-    #[cfg(not(feature = "std"))]
+    #[cfg(feature = "libm")]
     return libm::floor(x);
 }
 

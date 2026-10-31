@@ -54,14 +54,21 @@ of small factors) and for any magnitude that does not fit in a float.
   and prints scientific notation from the log outside it (`1e-5000`), choosing the
   shortest mantissa that parses back to the same value. `FromStr` accepts exponents of
   any size.
-- **`no_std`.** The crate is `#![no_std]`, never allocates, and uses `libm` when `std` is
-  off.
+- **`no_std`.** The crate is `#![no_std]` and never allocates. Use
+  `default-features = false, features = ["libm"]`.
+- **Reproducible.** With the `libm` feature, every result (including formatted text) is
+  bit-for-bit identical on every platform; CI checks one hash of a large battery of
+  results on Linux, macOS and Windows.
+- **Stable.** The public API, accuracy bounds, serialized form and text form are covered
+  by the [stability policy](docs/stability.md), each with a CI check; data serialized by
+  0.1 stays readable.
 
 ## Features
 
 | feature | default | provides |
 |---|---|---|
-| `std` | yes | the platform math library (otherwise `libm`) |
+| `std` | yes | the platform math library (glibc, Apple libm, Windows UCRT) |
+| `libm` | no | the pure-Rust `libm` for all math: bit-for-bit identical results on every platform; required for `no_std` |
 | `serde` | no | `Serialize`/`Deserialize` (stored log; `"-inf"`/`"inf"` strings in JSON), and `serde_as_value` |
 | `num-traits` | no | `Zero`, `One`, `Pow`, `Bounded` |
 | `approx` | no | `AbsDiffEq`, `RelativeEq`, `UlpsEq` on the stored log |
@@ -103,6 +110,7 @@ their ideas underlie.
 - [`docs/api.md`](docs/api.md): the API at a glance
 - [`docs/accuracy.md`](docs/accuracy.md): error measurements
 - [`docs/performance.md`](docs/performance.md): benchmarks
+- [`docs/stability.md`](docs/stability.md): what counts as a breaking change
 - [`docs/decisions.md`](docs/decisions.md): design decisions and their reasons
 - [`docs/prior-art.md`](docs/prior-art.md): related crates
 

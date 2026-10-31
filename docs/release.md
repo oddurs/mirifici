@@ -19,6 +19,9 @@ publishes.
       `RUSTDOCFLAGS="--cfg docsrs" cargo +nightly doc --all-features --no-deps` renders the
       feature badges as expected.
 - [ ] `docs/api.md` matches the public API (compare with `cargo doc` output).
+- [ ] `cargo semver-checks` against the previous release reports no unintended breakage.
+- [ ] `tests/wire_format.rs` and `tests/reproducible.rs` are unchanged since the last
+      release, or the changelog explains each change.
 - [ ] `CHANGELOG.md`: move entries from *Unreleased* into the new version with today's
       date; add the compare link at the bottom.
 - [ ] `Cargo.toml`: bump `version`; check `rust-version`, `description`, `keywords`
