@@ -1,0 +1,54 @@
+name: Pages
+
+# Publishes site/ and the rustdoc API reference (under /api/) to GitHub Pages.
+# One-time setup: Settings → Pages → Build and deployment → Source: "GitHub Actions".
+
+on:
+  push:
+    branches: [main]
+    paths: ["site/**", "src/**", "Cargo.toml", "README.md", ".github/workflows/pages.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@nightly
+      - name: API reference (all features, with feature badges as on docs.rs)
+        run: cargo doc --no-deps --all-features
+        env:
+          RUSTDOCFLAGS: --cfg docsrs -D warnings
+      - name: Assemble
+        run: |
+          mkdir -p _site
+          cp -r site/. _site/
+          cp -r target/doc _site/api
+          cat > _site/api/index.html <<'HTML'
+          <!doctype html><meta charset="utf-8"><title>mirifici API</title>
+          <meta http-equiv="refresh" content="0; url=mirifici/"><a href="mirifici/">mirifici API reference</a>
+          HTML
+          touch _site/.nojekyll
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

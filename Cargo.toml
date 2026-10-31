@@ -7,10 +7,11 @@ description = "A log-space number type: products become sums, and magnitudes far
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/oddurs/mirifici"
 documentation = "https://docs.rs/mirifici"
+homepage = "https://oddurs.github.io/mirifici/"
 readme = "README.md"
 keywords = ["logarithm", "log-space", "probability", "logsumexp", "no-std"]
 categories = ["mathematics", "science", "no-std", "no-std::no-alloc"]
-exclude = ["/.github", "/tools", "/bench", "/fuzz", "*.proptest-regressions"]
+exclude = ["/.github", "/tools", "/bench", "/fuzz", "/site", "*.proptest-regressions"]
 
 [features]
 default = ["std"]

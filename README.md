@@ -1,5 +1,7 @@
 # mirifici
 
+**[oddurs.github.io/mirifici](https://oddurs.github.io/mirifici/)** · [API reference](https://oddurs.github.io/mirifici/api/mirifici/)
+
 A log-space number type for Rust. `Log<F>` stores a non-negative real number as its
 natural logarithm, so multiplication becomes addition, and values like 1e-5000 or
 1e+90000 stay representable, comparable and printable.

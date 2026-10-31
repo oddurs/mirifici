@@ -33,6 +33,8 @@ jobs:
       - run: cargo fmt --all --check
       - run: cargo fmt --manifest-path bench/Cargo.toml --all --check
       - run: cargo fmt --manifest-path fuzz/Cargo.toml --all --check
+      - name: site script parses
+        run: node --check site/main.js
 
   clippy:
     runs-on: ubuntu-latest
@@ -174,7 +176,7 @@ jobs:
       - name: package contents
         run: |
           cargo package --list > "$RUNNER_TEMP/files.txt"
-          ! grep -E '^(bench|fuzz|tools|\.github)/' "$RUNNER_TEMP/files.txt"
+          ! grep -E '^(bench|fuzz|site|tools|\.github)/' "$RUNNER_TEMP/files.txt"
 
   minimal-versions:
     # Downstream lock files may hold the oldest versions Cargo.toml allows; build with them.

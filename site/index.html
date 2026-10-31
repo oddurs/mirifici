@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>mirifici · a log-space number type for Rust</title>
+<meta name="description" content="mirifici stores a non-negative number as its natural logarithm, so products become sums and 1e-5000 stays a number. A Rust crate after Napier's Mirifici Logarithmorum Canonis Descriptio (1614).">
+<meta property="og:title" content="mirifici">
+<meta property="og:description" content="A log-space number type for Rust: products become sums, and magnitudes far beyond f64 stay representable.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..700;1,400..700&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"
+      integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
+<link rel="stylesheet" href="style.css">
+<script>
+  // Apply a remembered theme before first paint.
+  try { const t = localStorage.getItem("theme"); if (t) document.documentElement.dataset.theme = t; } catch (_) {}
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"
+        integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script>
+<script defer src="main.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="top">
+  <a class="mark" href="#" aria-label="mirifici, top of page">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M5 27 Q9 9 27 5" /><path d="M9 27 V17 H13 V27 Z" class="fill" /></svg>
+    <span>mirifici</span>
+  </a>
+  <nav aria-label="Sections">
+    <a href="#canon">Canon</a>
+    <a href="#underflow">Underflow</a>
+    <a href="#arithmetic">Arithmetic</a>
+    <a href="#accuracy">Accuracy</a>
+    <a href="#history">History</a>
+    <a href="#use">Use</a>
+    <a href="api/mirifici/">API</a>
+    <a href="https://github.com/oddurs/mirifici">GitHub</a>
+  </nav>
+  <button class="theme" type="button" aria-label="Toggle dark mode" title="Toggle dark mode">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5" /><path d="M12 7a5 5 0 0 1 0 10z" class="fill" /></svg>
+  </button>
+</header>
+
+<main id="main">
+
+<section class="hero">
+  <p class="kicker">Logarithmorum canonis descriptio, for floating point</p>
+  <h1>mirifici</h1>
+  <p class="lede">A log-space number type for Rust. <code>Log&lt;F&gt;</code> stores a non-negative
+    number as its natural logarithm, so multiplication becomes addition and
+    <span class="num">10<sup>−5000</sup></span> stays a number.</p>
+  <div class="hero-eq" data-tex="\ln(ab) = \ln a + \ln b">ln(ab) = ln a + ln b</div>
+  <div class="actions">
+    <a class="btn primary" href="#use">Get started</a>
+    <a class="btn" href="api/mirifici/">API reference</a>
+    <a class="btn" href="https://github.com/oddurs/mirifici">Source</a>
+  </div>
+  <svg class="hero-curve" viewBox="0 0 1200 420" preserveAspectRatio="none" aria-hidden="true">
+    <path id="hero-area" />
+    <path id="hero-line" />
+  </svg>
+</section>
+
+<section id="canon" class="band">
+  <div class="wrap two">
+    <div class="prose">
+      <h2><span class="sec">I.</span> The wonderful canon</h2>
+      <blockquote>
+        <p>Seeing there is nothing (right well-beloved Students of the Mathematics) that is so
+          troublesome to mathematical practice, nor that doth more molest and hinder calculators,
+          than the multiplications, divisions, square and cubical extractions of great numbers&hellip;</p>
+        <cite>John Napier, preface to the <i>Descriptio</i>, in Edward Wright&rsquo;s translation (1616)</cite>
+      </blockquote>
+      <p>Napier&rsquo;s remedy was a table that paired every number with a <em>logarithm</em>, so
+        that a product could be read off as a sum. Floating-point numbers have the same trouble in
+        a different form: an <code>f64</code> cannot go below about 10<sup>−308</sup>, so a long
+        product of probabilities quietly becomes zero. The cure is the same. Store the logarithm,
+        and add.</p>
+      <p>Why the <em>natural</em> logarithm? Grégoire de Saint-Vincent showed in 1647 that the area
+        under the hyperbola <span data-tex="y = 1/t">y = 1/t</span> over
+        <span data-tex="[a, b]">[a, b]</span> equals the area over
+        <span data-tex="[ka, kb]">[ka, kb]</span>; his student de Sarasa saw that this makes the
+        area a logarithm. Drag the point: the two shaded regions always match, because stretching
+        an interval by a factor adds a fixed amount of area.</p>
+    </div>
+    <figure class="plate">
+      <svg id="hyperbola" viewBox="0 0 520 380" role="img" aria-labelledby="hyp-title hyp-desc">
+        <title id="hyp-title">The hyperbola y = 1/t</title>
+        <desc id="hyp-desc">The area under 1/t from 1 to x equals the area from x to x squared. Both equal ln x.</desc>
+      </svg>
+      <figcaption>
+        <span class="readout" id="hyp-readout"></span>
+        <label class="slider">x <input id="hyp-x" type="range" min="1.05" max="2.6" step="0.01" value="1.8"></label>
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="underflow">
+  <div class="wrap">
+    <h2><span class="sec">II.</span> Where floats fall to zero</h2>
+    <p class="intro">Multiply <i>n</i> independent probabilities of size <i>p</i>, as a hidden Markov
+      model or a likelihood does. Plain <code>f64</code> runs into its floor and returns zero;
+      <code>Log</code> keeps the value, prints it, and can still compare and add it.</p>
+    <div class="controls">
+      <label>p <input id="uf-p" type="range" min="0.05" max="0.95" step="0.01" value="0.4"><output id="uf-p-out">0.40</output></label>
+      <label><i>n</i> <input id="uf-n" type="range" min="0" max="6" step="0.01" value="3.3"><output id="uf-n-out"></output></label>
+    </div>
+    <div class="duel">
+      <div class="card">
+        <div class="card-k">f64</div>
+        <div class="card-code"><code>p.powi(n)</code></div>
+        <div class="card-v" id="uf-float"></div>
+        <div class="card-note" id="uf-float-note"></div>
+      </div>
+      <div class="card accent">
+        <div class="card-k">Log&lt;f64&gt;</div>
+        <div class="card-code"><code>Log::from_value(p).powi(n)</code></div>
+        <div class="card-v" id="uf-log"></div>
+        <div class="card-note" id="uf-log-note"></div>
+      </div>
+    </div>
+    <figure class="chart-fig">
+      <div class="chart-head">
+        <h3>Decimal exponent of p<sup>n</sup></h3>
+        <ul class="legend" aria-label="Legend">
+          <li><span class="sw s1"></span>Log&lt;f64&gt;</li>
+          <li><span class="sw s2"></span>f64</li>
+        </ul>
+      </div>
+      <svg id="uf-chart" class="chart" viewBox="0 0 900 300" role="img" aria-label="Decimal exponent of p to the n, against n, for f64 and Log"></svg>
+    </figure>
+  </div>
+</section>
+
+<section id="arithmetic" class="band">
+  <div class="wrap">
+    <h2><span class="sec">III.</span> Arithmetic on the logarithms</h2>
+    <p class="intro">Operators act on values; the work happens on the stored logarithms
+      <span data-tex="\ell_a = \ln a">ℓa = ln a</span>. Every edge case is defined, and none of them
+      produces NaN: indeterminate forms such as <span data-tex="0\cdot\infty">0·∞</span> return
+      <code>None</code> from the <code>checked_*</code> methods.</p>
+    <div class="ops">
+      <div class="op"><div class="op-code"><code>a * b</code></div><div class="op-tex" data-tex="\ell_a + \ell_b"></div><div class="op-note">correctly rounded</div></div>
+      <div class="op"><div class="op-code"><code>a / b</code></div><div class="op-tex" data-tex="\ell_a - \ell_b"></div><div class="op-note">correctly rounded</div></div>
+      <div class="op"><div class="op-code"><code>a.powf(p)</code></div><div class="op-tex" data-tex="p\,\ell_a"></div><div class="op-note"><span data-tex="0^0 = 1">0⁰ = 1</span></div></div>
+      <div class="op wide"><div class="op-code"><code>a + b</code></div><div class="op-tex" data-tex="m + \operatorname{ln1p}\!\left(e^{-|\ell_a-\ell_b|}\right),\quad m=\max(\ell_a,\ell_b)"></div><div class="op-note">log-sum-exp; the correction lies in <span data-tex="[0,\ln 2]">[0, ln 2]</span></div></div>
+      <div class="op wide"><div class="op-code"><code>a.checked_sub(b)</code></div><div class="op-tex" data-tex="\ell_a + \operatorname{log1mexp}(\ell_a-\ell_b)"></div><div class="op-note"><code>None</code> if b &gt; a; Mächler (2012)</div></div>
+    </div>
+    <div class="two">
+      <figure class="chart-fig">
+        <div class="chart-head">
+          <h3>The two kernels</h3>
+          <ul class="legend" aria-label="Legend">
+            <li><span class="sw s1"></span><span data-tex="\ln(1+e^{-d})">ln(1+e^-d)</span>, used by <code>+</code></li>
+            <li><span class="sw s2"></span><span data-tex="\ln(1-e^{-d})">ln(1−e^-d)</span>, used by <code>checked_sub</code></li>
+          </ul>
+        </div>
+        <svg id="kernel-chart" class="chart" viewBox="0 0 560 320" role="img" aria-label="The log-sum-exp correction and log1mexp, against d"></svg>
+      </figure>
+      <div class="prose small">
+        <h3>Why <code>log1mexp</code> switches formulas at <span data-tex="\ln 2">ln 2</span></h3>
+        <p>Computing <span data-tex="\ln(1-e^{-d})">ln(1 − e^−d)</span> directly fails for small
+          <i>d</i>, where <span data-tex="e^{-d}">e^−d</span> rounds to 1 and the result to
+          <span data-tex="-\infty">−∞</span>. Following Mächler, the crate uses</p>
+        <div class="display" data-tex="\operatorname{log1mexp}(d)=\begin{cases}\ln\!\left(-\operatorname{expm1}(-d)\right) & d\le\ln 2\\[2pt] \operatorname{ln1p}\!\left(-e^{-d}\right) & d>\ln 2\end{cases}"></div>
+        <p>Each branch is evaluated where its inner function is accurate. The same care runs through
+          the crate: <code>ln_1p</code> for additions, Neumaier summation for long products, and
+          double-double constants for base 10 and base 2.</p>
+        <p>Mercator&rsquo;s 1668 series
+          <span data-tex="\ln(1+t) = t - \tfrac{t^2}{2} + \tfrac{t^3}{3} - \cdots">ln(1+t) = t − t²/2 + …</span>
+          is why <code>ln_1p</code> exists at all: for <span data-tex="t = 10^{-20}">t = 10⁻²⁰</span>,
+          forming <span data-tex="1+t">1 + t</span> first loses <i>t</i> entirely.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="accuracy">
+  <div class="wrap">
+    <h2><span class="sec">IV.</span> Accuracy, measured</h2>
+    <p class="intro">Absolute error in the stored log is relative error in the value. Each operation is
+      checked against 60-digit references computed with mpmath, in units of
+      <span data-tex="\varepsilon\cdot\max(1,|\ln x|)">ε·max(1, |ln x|)</span>. A correctly rounded
+      result scores at most 0.5. The bars below show the worst case over thousands of inputs; the
+      tick is the documented bound that CI enforces on Linux, macOS and Windows.</p>
+    <figure class="chart-fig">
+      <div class="chart-head">
+        <h3>Maximum error, <code>Log&lt;f64&gt;</code></h3>
+        <ul class="legend" aria-label="Legend">
+          <li><span class="sw s1"></span>platform math (glibc)</li>
+          <li><span class="sw s2"></span><code>libm</code> feature</li>
+          <li><span class="sw tick"></span>documented bound</li>
+        </ul>
+      </div>
+      <svg id="acc-chart" class="chart" viewBox="0 0 900 470" role="img" aria-label="Maximum measured error per operation, with the documented bound"></svg>
+      <details class="table-view">
+        <summary>Show as a table</summary>
+        <table id="acc-table"><thead><tr><th>operation</th><th>glibc</th><th>libm</th><th>bound</th></tr></thead><tbody></tbody></table>
+      </details>
+    </figure>
+    <div class="facts">
+      <div><b>2 000+</b><span>reference cases per operation, f32 and f64</span></div>
+      <div><b>0 of 2 000</b><span>printed mantissas that differ from the correctly rounded digits</span></div>
+      <div><b>153 → 0 ulp</b><span>error of a 10<sup>6</sup>-term product, plain vs. compensated</span></div>
+      <div><b>bit-identical</b><span>results on every platform with the <code>libm</code> feature</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="history" class="band">
+  <div class="wrap">
+    <h2><span class="sec">V.</span> A short history, where it lives in the API</h2>
+    <ol class="timeline">
+      <li>
+        <time>1614</time>
+        <h3>John Napier, <i>Mirifici Logarithmorum Canonis Descriptio</i></h3>
+        <p>Twenty years of computation turned the products of spherical trigonometry into sums of
+          table entries. He named the numbers <i>logarithms</i>, from <i>logos</i> (ratio) and
+          <i>arithmos</i> (number).</p>
+        <p class="api">In the API: <code>Log</code> itself, and <code>*</code> as <code>+</code> on the stored logs.</p>
+      </li>
+      <li>
+        <time>1620</time>
+        <h3>Jost Bürgi, <i>Arithmetische und Geometrische Progress Tabulen</i></h3>
+        <p>Independently of Napier, the Swiss clockmaker set red numbers in arithmetic progression
+          beside black numbers in geometric progression,
+          <span data-tex="10^8\,(1.0001)^n">10⁸·1.0001ⁿ</span>.</p>
+        <p class="api">In the API: <code>powi</code>, one step along such a table.</p>
+      </li>
+      <li>
+        <time>1624</time>
+        <h3>Henry Briggs, <i>Arithmetica Logarithmica</i></h3>
+        <p>Base ten, with <span data-tex="\log 1 = 0">log 1 = 0</span> and
+          <span data-tex="\log 10 = 1">log 10 = 1</span>: the logarithms of 1–20,000 and
+          90,000–100,000 to fourteen places, by hand. Fourteen places is about what an
+          <code>f64</code> holds for a five-digit number.</p>
+        <div class="briggs" id="briggs" aria-label="A few lines of a fourteen-place table"></div>
+        <p class="api">In the API: <code>log10</code>, and the decimal exponent of <code>Display</code>.</p>
+      </li>
+      <li>
+        <time>1647 &middot; 1649</time>
+        <h3>Grégoire de Saint-Vincent &amp; Alphonse Antonio de Sarasa</h3>
+        <p>Areas under the hyperbola over geometrically spaced intervals are equal, so the area
+          behaves as a logarithm: <span data-tex="\ln x = \int_1^x \frac{dt}{t}">ln x = ∫ dt/t</span>.</p>
+        <p class="api">In the API: <code>ln</code>, the one logarithm the type stores.</p>
+      </li>
+      <li>
+        <time>1668</time>
+        <h3>Nicholas Mercator, <i>Logarithmotechnia</i></h3>
+        <p>The series for <span data-tex="\ln(1+t)">ln(1+t)</span>, and, by most accounts, the first
+          use of the phrase <i>natural logarithm</i>.</p>
+        <p class="api">In the API: the <code>ln_1p</code> inside every addition.</p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<section id="benford">
+  <div class="wrap two">
+    <div class="prose">
+      <h2><span class="sec">VI.</span> Leading digits, beyond the float range</h2>
+      <p>A number has leading digit <i>d</i> exactly when the fractional part of its base-10 logarithm
+        lies in <span data-tex="[\log_{10} d,\ \log_{10}(d+1))">[log d, log(d+1))</span>. Data spread
+        evenly over many orders of magnitude has its logarithms spread evenly modulo one, so digit
+        <i>d</i> appears with frequency</p>
+      <div class="display" data-tex="P(d) = \log_{10}\!\left(1 + \tfrac{1}{d}\right)."></div>
+      <p>This is Benford&rsquo;s law. The chart counts the leading digits of
+        <span data-tex="2^1,\dots,2^{10000}">2¹ … 2¹⁰⁰⁰⁰</span> and of
+        <span data-tex="1!,\dots,3000!">1! … 3000!</span>, computed here in log space, as the
+        crate&rsquo;s <code>benford</code> example does. Almost all of them overflow an
+        <code>f64</code>: <span data-tex="2^{1024}">2¹⁰²⁴</span> and 171! already do.</p>
+    </div>
+    <figure class="chart-fig">
+      <div class="chart-head">
+        <h3>Share of leading digit</h3>
+        <ul class="legend" aria-label="Legend">
+          <li><span class="sw s1"></span><span data-tex="2^n">2ⁿ</span></li>
+          <li><span class="sw s2"></span><span data-tex="n!">n!</span></li>
+          <li><span class="sw dot"></span>Benford</li>
+        </ul>
+      </div>
+      <svg id="benford-chart" class="chart" viewBox="0 0 520 340" role="img" aria-label="Leading digit frequencies of powers of two and factorials, against Benford's law"></svg>
+    </figure>
+  </div>
+</section>
+
+<section id="use" class="band">
+  <div class="wrap">
+    <h2><span class="sec">VII.</span> Use</h2>
+    <div class="two">
+      <div>
+        <pre class="code"><code><span class="c"># Cargo.toml</span>
+[dependencies]
+mirifici = <span class="s">"0.1"</span>
+<span class="c"># no_std, or bit-identical results on every platform:</span>
+<span class="c"># mirifici = { version = "0.1", features = ["libm"] }</span></code></pre>
+        <pre class="code"><code><span class="k">use</span> mirifici::Log;
+
+<span class="c">// The likelihood of 100,000 observations.</span>
+<span class="k">let</span> likelihood: Log = data.iter()
+    .map(|&amp;x| density(x))
+    .product();
+
+<span class="k">let</span> tiny: Log = <span class="s">"2.5e-90210"</span>.parse()?;
+<span class="m">assert_eq!</span>(tiny.to_string(), <span class="s">"2.5e-90210"</span>);
+<span class="m">assert!</span>(tiny &lt; likelihood);</code></pre>
+      </div>
+      <div class="guarantees">
+        <h3>Guarantees</h3>
+        <dl>
+          <dt>Domain</dt><dd><span data-tex="x \ge 0">x ≥ 0</span>, stored as <span data-tex="\ln x">ln x</span> in one <code>f32</code> or <code>f64</code>; <code>SignedLog</code> for signed values.</dd>
+          <dt>No NaN</dt><dd>Invalid inputs are errors; indeterminate forms are <code>None</code> or a panic, never NaN.</dd>
+          <dt>Range</dt><dd><span data-tex="e^{\pm 1.8\times 10^{308}}">e^(±1.8·10³⁰⁸)</span>, printed and parsed exactly in scientific notation.</dd>
+          <dt>Accuracy</dt><dd>Documented bounds for every operation, tested against 60-digit references.</dd>
+          <dt>Stability</dt><dd>API, accuracy bounds and the serialized form are covered by a written stability policy.</dd>
+          <dt>Portable</dt><dd><code>#![no_std]</code>, no allocation, MSRV 1.85; serde, num-traits, approx and bytemuck behind features.</dd>
+        </dl>
+        <p class="links"><a href="api/mirifici/">API reference</a> · <a href="https://github.com/oddurs/mirifici/blob/main/docs/accuracy.md">Accuracy</a> · <a href="https://github.com/oddurs/mirifici/blob/main/docs/stability.md">Stability policy</a> · <a href="https://github.com/oddurs/mirifici/blob/main/docs/decisions.md">Design decisions</a></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <p><i>Mirifici</i>: “wonderful”, the first word of Napier’s title. Dual-licensed MIT or Apache-2.0.
+      Set in EB Garamond and JetBrains Mono; mathematics by KaTeX.</p>
+  </div>
+</footer>
+<div class="tip" role="status" aria-live="polite" hidden></div>
+</body>
+</html>
