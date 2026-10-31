@@ -66,7 +66,9 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo test --all-features
       - run: cargo test --no-default-features
-      - run: cargo test --release --all-features --test accuracy --test robustness
+      - run: cargo test --release --all-features --test robustness
+      # --nocapture prints the per-platform accuracy table into the job log.
+      - run: cargo test --release --all-features --test accuracy -- --nocapture
       - name: run examples (each checks its own results)
         shell: bash
         run: for e in hmm_forward likelihood briggs_table benford; do cargo run --release --example "$e"; done
@@ -129,7 +131,8 @@ jobs:
       - uses: taiki-e/install-action@v2
         with:
           tool: cargo-fuzz
-      - run: cargo fuzz run ${{ matrix.target }} -- -max_total_time=60
+      # The prebuilt cargo-fuzz defaults to the musl target; fuzz on the host target.
+      - run: cargo fuzz run --target x86_64-unknown-linux-gnu ${{ matrix.target }} -- -max_total_time=60
         working-directory: fuzz
 
   coverage:

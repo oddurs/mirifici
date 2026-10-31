@@ -60,6 +60,14 @@ Measured with `cargo test --release --test accuracy -- --nocapture` (glibc via
 `from_log2` and `from_log10` multiply by their constant held to twice the float's
 precision (a double-double), so they are correctly rounded up to a tiny fraction of an ulp.
 
+### Other platforms
+
+The same bounds are enforced in CI on macOS (Apple's libm) and Windows (the UCRT), whose
+job logs print the full table (`--nocapture`). The largest difference seen so far is
+`log1mexp` on Windows, at **1.249**, which is why its bound is 1.5 rather than 1: the
+formula feeds `expm1`'s rounding into the logarithm, so a math library that is merely
+within one ulp (as opposed to glibc's nearly correctly rounded one) can exceed 1.
+
 ## Results: `f32`
 
 Same fixtures generator, with inputs exactly representable in `f32` and ε = 2⁻²³. The
