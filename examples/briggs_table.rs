@@ -60,7 +60,7 @@ fn main() {
     let mut max_err = 0i128;
     let mut mismatches = 0;
     for &(n, reference) in &rows {
-        let x = Log::from_value(n as f64).log10();
+        let x = Log::from_value(f64::from(n)).log10();
         let printed = to_units(&format!("{x:.14}"), 14);
         // exact decimal expansion of the f64, to 25 places, against the reference
         let err = (to_units(&format!("{x:.25}"), 25) - to_units(reference, 25)).abs();

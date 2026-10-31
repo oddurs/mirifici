@@ -59,7 +59,7 @@ impl<F: LogFloat> Visitor<'_> for LnVisitor<F> {
     }
 
     fn visit_f32<E: de::Error>(self, v: f32) -> Result<Log<F>, E> {
-        Self::finish(v as f64)
+        Self::finish(f64::from(v))
     }
 
     fn visit_i64<E: de::Error>(self, v: i64) -> Result<Log<F>, E> {
@@ -131,7 +131,7 @@ impl<'de, F: LogFloat> Deserialize<'de> for SignedLog<F> {
 /// # }
 /// ```
 pub mod serde_as_value {
-    use super::*;
+    use super::{Deserializer, Log, LogFloat, PhantomData, Serializer, Visitor, de, fmt};
 
     /// Serializes the value of `x`: a number in range, a scientific-notation string beyond.
     ///
@@ -169,7 +169,7 @@ pub mod serde_as_value {
         }
 
         fn visit_f32<E: de::Error>(self, v: f32) -> Result<Log<F>, E> {
-            self.visit_f64(v as f64)
+            self.visit_f64(f64::from(v))
         }
 
         fn visit_i64<E: de::Error>(self, v: i64) -> Result<Log<F>, E> {

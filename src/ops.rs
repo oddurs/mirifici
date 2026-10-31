@@ -19,6 +19,7 @@ impl<F: LogFloat> Log<F> {
     /// assert_eq!(Log::ZERO.checked_mul(Log::from_value(5.0)), Some(Log::ZERO));
     /// ```
     #[inline]
+    #[must_use]
     pub fn checked_mul(self, rhs: Self) -> Option<Self> {
         let ln = self.0 + rhs.0;
         if ln.is_nan() { None } else { Some(Self(ln)) }
@@ -37,6 +38,7 @@ impl<F: LogFloat> Log<F> {
     /// assert_eq!(Log::<f64>::INFINITY.checked_div(Log::INFINITY), None);
     /// ```
     #[inline]
+    #[must_use]
     pub fn checked_div(self, rhs: Self) -> Option<Self> {
         let ln = self.0 - rhs.0;
         if ln.is_nan() { None } else { Some(Self(ln)) }

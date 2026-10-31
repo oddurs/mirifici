@@ -222,7 +222,7 @@ fn parse_fixtures() {
     check_parse::<f64>(include_str!("fixtures/parse_f64.csv"), f64::EPSILON, 1.0);
     check_parse::<f32>(
         include_str!("fixtures/parse_f32.csv"),
-        f32::EPSILON as f64,
+        f64::from(f32::EPSILON),
         1.0,
     );
 }

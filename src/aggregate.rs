@@ -107,6 +107,7 @@ impl<F: LogFloat> Log<F> {
     /// error in `s`, which is an absolute error of at most n·ε in the stored log (typically
     /// √n·ε), plus half an ulp for the final addition. Measured: at most
     /// 1.07·ε·max(1, |result|) for n ≤ 1000 (`docs/accuracy.md`).
+    #[must_use]
     pub fn sum_two_pass(xs: &[Self]) -> Self {
         Self(sum_two_pass_by(xs, |x| x.0))
     }
@@ -130,6 +131,7 @@ impl<F: LogFloat> Log<F> {
     ///
     /// If the factors include both `ZERO` and `INFINITY` (0 · ∞ is indeterminate).
     #[track_caller]
+    #[must_use]
     pub fn product_compensated<I: IntoIterator<Item = Self>>(iter: I) -> Self {
         let mut sum = F::ZERO;
         let mut c = F::ZERO;
@@ -185,9 +187,7 @@ fn product_plain<F: LogFloat>(iter: impl Iterator<Item = F>) -> Log<F> {
     for l in iter {
         s += l;
     }
-    if s.is_nan() {
-        panic!("Log product: 0 * inf is indeterminate");
-    }
+    assert!(!s.is_nan(), "Log product: 0 * inf is indeterminate");
     Log(s)
 }
 

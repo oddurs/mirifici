@@ -35,7 +35,10 @@ pub(crate) mod features {
 }
 
 pub(crate) mod sealed {
-    use super::*;
+    use super::{
+        Add, AddAssign, Debug, Display, Div, LowerExp, Mul, Neg, Ordering, Sub, SubAssign,
+        UpperExp, features,
+    };
 
     /// Everything the crate needs from a float. Not nameable outside the crate.
     pub trait Float:
@@ -99,6 +102,8 @@ macro_rules! impl_float {
     ) => {
         impl LogFloat for $t {}
 
+        // `as` casts are exact or round-to-nearest here, and serve both f32 and f64.
+        #[allow(clippy::cast_lossless)]
         impl sealed::Float for $t {
             const ZERO: Self = 0.0;
             const ONE: Self = 1.0;

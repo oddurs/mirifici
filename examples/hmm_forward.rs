@@ -20,7 +20,7 @@ const TRANS: [[f64; 2]; 2] = [[0.95, 0.05], [0.10, 0.90]];
 const EMIT: [[f64; 6]; 2] = [[1.0 / 6.0; 6], [0.1, 0.1, 0.1, 0.1, 0.1, 0.5]];
 const START: [f64; 2] = [0.5, 0.5];
 
-/// A small deterministic generator (SplitMix64), so the example needs no dependencies.
+/// A small deterministic generator (`SplitMix64`), so the example needs no dependencies.
 struct Rng(u64);
 impl Rng {
     fn uniform(&mut self) -> f64 {

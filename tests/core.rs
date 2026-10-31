@@ -298,7 +298,7 @@ fn powi_cases() {
     assert_eq!(L::ZERO.powi(-1), L::INFINITY);
     assert_eq!(L::INFINITY.powi(-1), L::ZERO);
     assert_eq!(bits(L::ONE.powi(-7)), 0);
-    assert_eq!(L::from_ln(1.0).powi(i32::MIN).ln(), i32::MIN as f64);
+    assert_eq!(L::from_ln(1.0).powi(i32::MIN).ln(), f64::from(i32::MIN));
 }
 
 #[test]

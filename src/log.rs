@@ -81,6 +81,7 @@ impl<F: LogFloat> Log<F> {
     /// ```
     #[inline]
     #[track_caller]
+    #[must_use]
     pub fn from_value(x: F) -> Self {
         match Self::try_from_value(x) {
             Ok(v) => v,
@@ -118,6 +119,7 @@ impl<F: LogFloat> Log<F> {
     /// If `ln` is NaN.
     #[inline]
     #[track_caller]
+    #[must_use]
     pub fn from_ln(ln: F) -> Self {
         match Self::try_from_ln(ln) {
             Ok(v) => v,
@@ -147,6 +149,7 @@ impl<F: LogFloat> Log<F> {
     /// never holds NaN is broken, and the results of later operations on it (comparisons,
     /// arithmetic, formatting) are unspecified. This can never cause undefined behaviour.
     #[inline]
+    #[must_use]
     pub const fn from_ln_unchecked(ln: F) -> Self {
         Self(ln)
     }
@@ -161,6 +164,7 @@ impl<F: LogFloat> Log<F> {
     /// If `log2` is NaN.
     #[inline]
     #[track_caller]
+    #[must_use]
     pub fn from_log2(log2: F) -> Self {
         Self::from_ln(F::from_f64(dd::mul_rounded(log2.to_f64(), dd::LN_2)))
     }
@@ -183,6 +187,7 @@ impl<F: LogFloat> Log<F> {
     /// ```
     #[inline]
     #[track_caller]
+    #[must_use]
     pub fn from_log10(log10: F) -> Self {
         Self::from_ln(F::from_f64(dd::mul_rounded(log10.to_f64(), dd::LN_10)))
     }
@@ -197,6 +202,7 @@ impl<F: LogFloat> Log<F> {
     /// Antonio de Sarasa observed that this makes the area a logarithm. ln(x) is that area,
     /// from 1 to x.
     #[inline]
+    #[must_use]
     pub const fn ln(self) -> F {
         self.0
     }
@@ -204,6 +210,7 @@ impl<F: LogFloat> Log<F> {
     /// The base-2 logarithm, `ln · log2(e)`, formed with log2(e) to twice the float's
     /// precision: within a hair over half an ulp of the exact value.
     #[inline]
+    #[must_use]
     pub fn log2(self) -> F {
         F::from_f64(dd::mul_rounded(self.0.to_f64(), dd::LOG2_E))
     }
@@ -219,6 +226,7 @@ impl<F: LogFloat> Log<F> {
     /// `log10` is the decimal exponent that `Display` prints for values beyond the float's
     /// range.
     #[inline]
+    #[must_use]
     pub fn log10(self) -> F {
         F::from_f64(dd::mul_rounded(self.0.to_f64(), dd::LOG10_E))
     }
@@ -230,6 +238,7 @@ impl<F: LogFloat> Log<F> {
     /// Unless `base` is finite, positive and not 1.
     #[inline]
     #[track_caller]
+    #[must_use]
     pub fn log(self, base: F) -> F {
         assert!(
             base > F::ZERO && base.is_finite() && base != F::ONE,
@@ -251,6 +260,7 @@ impl<F: LogFloat> Log<F> {
     /// assert_eq!(Log::from_log10(-400.0).to_value(), 0.0); // saturates
     /// ```
     #[inline]
+    #[must_use]
     pub fn to_value(self) -> F {
         self.0.exp()
     }
@@ -268,6 +278,7 @@ impl<F: LogFloat> Log<F> {
     /// assert_eq!(Log::from_log10(400.0).try_to_value(), None);
     /// ```
     #[inline]
+    #[must_use]
     pub fn try_to_value(self) -> Option<F> {
         let v = self.0.exp();
         let underflow = v == F::ZERO && self.0 != F::NEG_INFINITY;

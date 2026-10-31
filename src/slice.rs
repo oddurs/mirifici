@@ -25,6 +25,7 @@ use crate::log::Log;
 /// assert!((logsumexp(&ln) - (-1000.0 + 2f64.ln())).abs() < 1e-12);
 /// ```
 #[inline]
+#[must_use]
 pub fn logsumexp<F: LogFloat>(ln: &[F]) -> F {
     sum_two_pass_by(ln, |&l| l)
 }
@@ -82,6 +83,7 @@ pub fn softmax_in_place<F: LogFloat>(ln: &mut [F]) -> Option<F> {
 /// This is the estimator behind importance-sampling and marginal-likelihood estimates such
 /// as the IWAE bound. Computed as `logsumexp(ln) − ln(n)`. Returns `None` for an empty
 /// slice.
+#[must_use]
 pub fn log_mean_exp<F: LogFloat>(ln: &[F]) -> Option<F> {
     if ln.is_empty() {
         return None;
@@ -97,6 +99,7 @@ pub fn log_mean_exp<F: LogFloat>(ln: &[F]) -> Option<F> {
 /// # Panics
 ///
 /// If the slices have different lengths.
+#[must_use]
 pub fn log_mean_exp_weighted<F: LogFloat>(ln: &[F], ln_weights: &[F]) -> Option<F> {
     assert_eq!(
         ln.len(),
@@ -142,6 +145,7 @@ pub fn normalize_in_place<F: LogFloat>(xs: &mut [Log<F>]) -> Option<Log<F>> {
 }
 
 /// The arithmetic mean (1/n) Σ xᵢ. Returns `None` for an empty slice.
+#[must_use]
 pub fn mean<F: LogFloat>(xs: &[Log<F>]) -> Option<Log<F>> {
     if xs.is_empty() {
         return None;
@@ -157,6 +161,7 @@ pub fn mean<F: LogFloat>(xs: &[Log<F>]) -> Option<Log<F>> {
 /// # Panics
 ///
 /// If the slices have different lengths.
+#[must_use]
 pub fn mean_weighted<F: LogFloat>(xs: &[Log<F>], weights: &[Log<F>]) -> Option<Log<F>> {
     assert_eq!(
         xs.len(),

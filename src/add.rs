@@ -35,6 +35,7 @@ use crate::log::Log;
 /// ```
 #[inline]
 #[track_caller]
+#[must_use]
 pub fn log1mexp<F: LogFloat>(d: F) -> F {
     assert!(d >= F::ZERO, "log1mexp: argument must be >= 0, got {d:?}");
     log1mexp_unchecked(d)
@@ -122,6 +123,7 @@ impl<F: LogFloat> Log<F> {
     /// assert_eq!(b.checked_sub(a), None);
     /// ```
     #[inline]
+    #[must_use]
     pub fn checked_sub(self, rhs: Self) -> Option<Self> {
         let (a, b) = (self.0, rhs.0);
         if b > a {

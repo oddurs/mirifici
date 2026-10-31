@@ -20,6 +20,8 @@
 //! Run `cargo test --release --test accuracy -- --nocapture report` to print the table used
 //! in `docs/accuracy.md`.
 
+#![allow(clippy::too_many_lines, clippy::needless_pass_by_value)]
+
 use mirifici::{Log, LogFloat, log1mexp};
 
 /// One fixture row: input columns and `(hi, lo)` reference pairs.

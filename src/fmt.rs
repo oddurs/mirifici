@@ -236,6 +236,7 @@ impl<F: LogFloat> Log<F> {
     ///
     /// Unless `base` is finite, positive and not 1 (as for [`Log::log`]).
     #[track_caller]
+    #[must_use]
     pub fn display_base(self, base: F) -> LogDisplay<F> {
         // Validates the base with the same message as `log`.
         let _ = Log::<F>::ONE.log(base);

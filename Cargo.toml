@@ -42,7 +42,22 @@ unsafe_code = "deny"
 rust_2018_idioms = { level = "warn", priority = -1 }
 
 [lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+must_use_candidate = "warn"
+return_self_not_must_use = "warn"
+# Comparing floats exactly is the point of most assertions in a numerics crate.
 float_cmp = "allow"
+# Conversions between float widths and integer counts are deliberate and documented.
+cast_precision_loss = "allow"
+cast_possible_truncation = "allow"
+cast_sign_loss = "allow"
+cast_possible_wrap = "allow"
+# Formulas read best with the names used in the papers they come from.
+many_single_char_names = "allow"
+similar_names = "allow"
+# Constants are copied digit-for-digit from high-precision references; separators would
+# make them harder to check against the source.
+unreadable_literal = "allow"
 
 [dev-dependencies]
 proptest = { version = "1.11.0", default-features = false, features = ["std"] }

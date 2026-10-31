@@ -75,6 +75,7 @@ impl<F: LogFloat> SignedLog<F> {
     /// A value with the given sign and magnitude. A zero magnitude gives [`SignedLog::ZERO`]
     /// whatever the sign.
     #[inline]
+    #[must_use]
     pub fn new(negative: bool, magnitude: Log<F>) -> Self {
         Self {
             magnitude,
@@ -89,6 +90,7 @@ impl<F: LogFloat> SignedLog<F> {
     /// If `x` is NaN.
     #[inline]
     #[track_caller]
+    #[must_use]
     pub fn from_value(x: F) -> Self {
         match Self::try_from_value(x) {
             Ok(v) => v,
@@ -114,12 +116,14 @@ impl<F: LogFloat> SignedLog<F> {
 
     /// The magnitude |x|.
     #[inline]
+    #[must_use]
     pub fn magnitude(self) -> Log<F> {
         self.magnitude
     }
 
     /// Whether x < 0. False for zero.
     #[inline]
+    #[must_use]
     pub fn is_negative(self) -> bool {
         self.negative
     }
@@ -127,6 +131,7 @@ impl<F: LogFloat> SignedLog<F> {
     /// The value as a float, saturating to ±0 or ±∞ outside the float's range like
     /// [`Log::to_value`].
     #[inline]
+    #[must_use]
     pub fn to_value(self) -> F {
         let v = self.magnitude.to_value();
         if self.negative { -v } else { v }
@@ -134,6 +139,7 @@ impl<F: LogFloat> SignedLog<F> {
 
     /// a + b, or `None` for ∞ − ∞.
     #[inline]
+    #[must_use]
     pub fn checked_add(self, rhs: Self) -> Option<Self> {
         if self.negative == rhs.negative {
             return Some(Self::new(self.negative, self.magnitude + rhs.magnitude));
@@ -149,12 +155,14 @@ impl<F: LogFloat> SignedLog<F> {
 
     /// a − b, or `None` for ∞ − ∞.
     #[inline]
+    #[must_use]
     pub fn checked_sub(self, rhs: Self) -> Option<Self> {
         self.checked_add(-rhs)
     }
 
     /// a · b, or `None` for 0 · ∞.
     #[inline]
+    #[must_use]
     pub fn checked_mul(self, rhs: Self) -> Option<Self> {
         let m = self.magnitude.checked_mul(rhs.magnitude)?;
         Some(Self::new(self.negative != rhs.negative, m))
@@ -163,6 +171,7 @@ impl<F: LogFloat> SignedLog<F> {
     /// a / b, or `None` for 0/0 and ∞/∞. Division of a non-zero value by zero gives an
     /// infinity whose sign is the numerator's (zero has no sign).
     #[inline]
+    #[must_use]
     pub fn checked_div(self, rhs: Self) -> Option<Self> {
         let m = self.magnitude.checked_div(rhs.magnitude)?;
         Some(Self::new(self.negative != rhs.negative, m))

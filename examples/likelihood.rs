@@ -11,7 +11,7 @@
 
 use mirifici::Log;
 
-/// Deterministic standard normal samples (SplitMix64 + Box–Muller).
+/// Deterministic standard normal samples (`SplitMix64` + Box–Muller).
 fn normal_samples(n: usize, mean: f64, sd: f64) -> Vec<f64> {
     let mut state = 1668u64;
     let mut uniform = move || {

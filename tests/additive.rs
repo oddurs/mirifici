@@ -184,7 +184,9 @@ fn sum_with_zeros_and_infinities() {
 
 #[test]
 fn sum_streaming_handles_rising_maximum() {
-    let xs: Vec<L> = (0..100).map(|i| L::from_value(i as f64 + 1.0)).collect();
+    let xs: Vec<L> = (0..100)
+        .map(|i| L::from_value(f64::from(i) + 1.0))
+        .collect();
     let s: L = xs.iter().sum();
     assert!((s.to_value() - 5050.0).abs() < 1e-11);
     assert!((L::sum_two_pass(&xs).to_value() - 5050.0).abs() < 1e-11);
@@ -259,7 +261,7 @@ fn product_compensated_is_more_accurate_over_a_million_terms() {
     let mut exact: i128 = 0;
     let mut terms = Vec::with_capacity(N);
     for _ in 0..N {
-        let k = (rng.next_u64() >> 12) as i128; // 52 random bits
+        let k = i128::from(rng.next_u64() >> 12); // 52 random bits
         exact -= k;
         terms.push(L::from_ln(-(k as f64) * 2f64.powi(-52)));
     }
