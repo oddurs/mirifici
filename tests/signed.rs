@@ -130,6 +130,8 @@ fn sum_and_product() {
     assert!(approx(xs.iter().sum(), -2.0));
     assert!(approx(xs.iter().product(), 24.0));
     assert!(approx(xs[..3].iter().product(), -6.0));
+    assert!(approx(xs.into_iter().product(), 24.0));
+    assert!(s(1.0) > s(-1.0) && s(-1.0) < s(1.0));
     let empty: [S; 0] = [];
     assert_eq!(empty.iter().sum::<S>(), S::ZERO);
     assert_eq!(empty.iter().product::<S>(), S::ONE);

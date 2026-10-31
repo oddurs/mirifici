@@ -17,6 +17,14 @@ fi
 cargo hack check --feature-powerset --no-dev-deps
 cargo hack test --feature-powerset --lib
 cargo doc --no-deps --all-features
+cargo clippy --all-targets --no-default-features -- -D warnings
+cargo test -q --release --all-features --test accuracy --test robustness
+cargo fmt --manifest-path fuzz/Cargo.toml --all --check
+cargo clippy --manifest-path fuzz/Cargo.toml -- -D warnings
+if rustup toolchain list | grep -q nightly; then
+  MIRIFLAGS="-Zmiri-strict-provenance -Zmiri-deterministic-floats" \
+    cargo +nightly miri test -q --all-features --test integrations --test core --test signed
+fi
 if [ -f bench/Cargo.toml ]; then
   cargo fmt --manifest-path bench/Cargo.toml --all --check
   cargo clippy --manifest-path bench/Cargo.toml --all-targets -- -D warnings

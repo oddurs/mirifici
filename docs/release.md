@@ -7,7 +7,11 @@ publishes.
 
 - [ ] `main` is green in CI (fmt, clippy, stable + MSRV tests, no_std, feature powerset,
       docs, bench build).
-- [ ] `./tools/ci.sh` passes locally, including `cargo +1.85 test --all-features`.
+- [ ] `./tools/ci.sh` passes locally, including `cargo +1.85 test --all-features` and,
+      with a nightly toolchain installed, Miri.
+- [ ] Each fuzz target has run for at least 10 minutes on the release commit with no
+      findings: `cd fuzz && cargo +nightly fuzz run <target> -- -max_total_time=600`.
+- [ ] `cargo llvm-cov --all-features --summary-only` reports ≥ 95 % of lines.
 - [ ] If any numerical code changed: `python3 tools/gen_fixtures.py` reproduces the
       committed fixtures byte for byte (`git diff --exit-code tests/fixtures`), and
       `cargo test --release --test accuracy -- --nocapture` matches `docs/accuracy.md`.

@@ -6,6 +6,30 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+- `Product` and `product_compensated` panicked on, or depended on the order of, factors
+  whose finite logs overflow `F::MAX` together with an exact `ZERO`.
+- `serde_as_value` deserialised `Log<f32>` numbers outside `f32`'s range (e.g. `1e-50`) as
+  `ZERO`/`INFINITY`.
+- `approx::UlpsEq` treated `ZERO`/`INFINITY` as equal to the largest finite stored logs.
+- `FromStr` did not agree exactly with `from_value` for decimal exponents ±308 (`f64`)
+  and ±38 (`f32`).
+- `FromStr` accepted a negative non-zero string as `ZERO` when it underflowed; `"+"` and
+  `"-"` reported "empty" instead of "invalid".
+- `Display` did not round-trip for 2⁵² ≤ |log10 x| < 2⁵³.
+- `LogDisplay` in base 10 or 2 was less accurate than `log10()`/`log2()`.
+- `powf`, `powi` and `sqrt` could store `-0.0`.
+
+### Added
+- `SignedLog::try_to_value`; lossless `From<Log<f32>> for Log<f64>` and for `SignedLog`.
+- `#[must_use]` on pure functions.
+- Robustness property tests over all bit patterns and arbitrary strings; `cargo-fuzz`
+  targets (`parse`, `format`, `arith`).
+- CI: Miri, fuzz smoke runs, coverage gate (≥ 95 % lines; currently 97.8 %), beta,
+  macOS and Windows, `thumbv6m` and `wasm32` builds, package-contents check, weekly
+  schedule; dependabot; `CONTRIBUTING.md`, `SECURITY.md`.
+- Clippy `pedantic` enabled with documented exceptions.
+
 ## [0.1.0] - not yet published
 
 First release.

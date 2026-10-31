@@ -89,6 +89,15 @@ the multiplication. The API documentation includes short, sourced notes on Napie
 Bürgi, Briggs, Saint-Vincent and de Sarasa, and Mercator, next to the parts of the API
 their ideas underlie.
 
+## How it is tested
+
+- Accuracy against 60-digit mpmath references for every operation, `f32` and `f64`,
+  with both the platform math library and `libm`.
+- Property tests over every float bit pattern and arbitrary strings: no NaN, no
+  unexpected panic, exact `Display`/`FromStr` round trips.
+- Fuzzing (`fuzz/`: parser, formatter, arithmetic), Miri, ≥ 95 % line coverage, and
+  tests on Linux, macOS and Windows, stable, beta and the MSRV, in CI.
+
 ## More
 
 - [`docs/api.md`](docs/api.md): the API at a glance

@@ -10,7 +10,7 @@ documentation = "https://docs.rs/mirifici"
 readme = "README.md"
 keywords = ["logarithm", "log-space", "probability", "logsumexp", "no-std"]
 categories = ["mathematics", "science", "no-std", "no-std::no-alloc"]
-exclude = ["/.github", "/tools", "/bench"]
+exclude = ["/.github", "/tools", "/bench", "/fuzz", "*.proptest-regressions"]
 
 [features]
 default = ["std"]

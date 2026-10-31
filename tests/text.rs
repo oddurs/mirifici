@@ -341,3 +341,47 @@ fn no_negative_zero_from_arithmetic() {
     assert_eq!(L::from_ln(1e-300).powf(-1e-300).ln().to_bits(), 0);
     assert_eq!(L::from_ln(-5e-324).sqrt().ln().to_bits(), 0);
 }
+
+#[test]
+fn very_long_precision_beyond_range() {
+    // Mantissas too long for the internal buffer are written unpadded but in full.
+    let x = L::from_log10(-5000.0);
+    let s = format!("{x:.150}");
+    // The stored log of 1e-5000 is 4.4e-13 (relative) below it, which 150 digits show.
+    assert!(
+        s.starts_with("9.99999999999") && s.ends_with("e-5001"),
+        "{s}"
+    );
+    assert_eq!(s.len(), "9.".len() + 150 + "e-5001".len());
+    let neg = SignedLog::new(true, x);
+    assert!(format!("{neg:.150}").starts_with("-9.999"));
+}
+
+#[test]
+fn all_formatting_traits_on_signed() {
+    let x = SignedLog::new(true, L::from_log10(-5000.0) * L::from_value(2.5));
+    assert_eq!(format!("{x:E}"), "-2.5E-5000");
+    assert_eq!(format!("{x:e}"), "-2.5e-5000");
+    assert_eq!(format!("{:E}", SignedLog::from_value(-0.5_f64)), "-5E-1");
+}
+
+#[test]
+fn log_display_in_base_e_and_others() {
+    let x = L::from_ln(-710.0);
+    assert_eq!(x.display_base(core::f64::consts::E).to_string(), "e^-710");
+    assert_eq!(format!("{:.2}", x.display_base(3.0)), "3^-646.27");
+}
+
+#[test]
+fn parse_error_messages() {
+    for (s, needle) in [
+        ("", "empty"),
+        ("abc", "invalid"),
+        ("-2", "negative"),
+        ("nan", "NaN"),
+    ] {
+        let e = s.parse::<L>().unwrap_err();
+        assert!(e.to_string().contains(needle), "{s:?}: {e}");
+        let _: &dyn core::error::Error = &e;
+    }
+}

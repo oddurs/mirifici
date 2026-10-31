@@ -22,6 +22,24 @@ mod serde {
     }
 
     #[test]
+    fn accepts_any_numeric_token() {
+        assert_tokens(&L::from_ln(3.0).readable(), &[Token::F64(3.0)]);
+        serde_test::assert_de_tokens(&L::from_ln(3.0).readable(), &[Token::U64(3)]);
+        serde_test::assert_de_tokens(&L::from_ln(-3.0).readable(), &[Token::I64(-3)]);
+        serde_test::assert_de_tokens(&L::from_ln(0.5).readable(), &[Token::F32(0.5)]);
+        serde_test::assert_de_tokens(&L::INFINITY.readable(), &[Token::Str("+inf")]);
+        assert!(serde_json::from_str::<Model>(r#"{"p":2.5e0}"#).is_ok());
+        let m: Model = serde_json::from_str(r#"{"p":3}"#).unwrap();
+        assert!((m.p.to_value() - 3.0).abs() < 1e-15);
+        let err = serde_json::from_str::<Model>(r#"{"p":[1]}"#)
+            .unwrap_err()
+            .to_string();
+        assert!(err.contains("non-negative number"), "{err}");
+        let err = serde_json::from_str::<L>("[1]").unwrap_err().to_string();
+        assert!(err.contains("natural logarithm"), "{err}");
+    }
+
+    #[test]
     fn rejects_nan_and_junk() {
         assert_de_tokens_error::<serde_test::Compact<L>>(
             &[Token::F64(f64::NAN)],
@@ -119,6 +137,8 @@ mod num_traits {
         assert_eq!(L::max_value(), L::INFINITY);
         assert_eq!(SignedLog::<f64>::zero(), SignedLog::ZERO);
         assert_eq!(SignedLog::<f64>::one(), SignedLog::ONE);
+        assert!(SignedLog::<f64>::ZERO.is_zero());
+        assert!(!SignedLog::<f64>::ONE.is_zero());
     }
 
     #[test]

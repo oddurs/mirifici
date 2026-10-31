@@ -1,0 +1,12 @@
+version: 2
+updates:
+  - package-ecosystem: cargo
+    directory: /
+    schedule:
+      interval: weekly
+    # Library: only flag incompatible updates; compatible ones are picked up by users.
+    versioning-strategy: lockfile-only
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
