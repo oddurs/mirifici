@@ -57,7 +57,9 @@ pub fn log_softmax_in_place<F: LogFloat>(ln: &mut [F]) -> Option<F> {
 /// Replaces each lᵢ by exp(lᵢ − logsumexp(l)): converts logits to probabilities in place.
 /// Returns the log normaliser.
 ///
-/// The output holds plain probabilities (not logs) that sum to one up to rounding. Returns
+/// The output holds plain probabilities (not logs) that sum to one up to rounding: each is
+/// computed from `lᵢ − logsumexp`, which carries an absolute error of about ε·|lᵢ|, so
+/// logits of magnitude 10⁶ give probabilities good to about 10⁻¹⁰. Returns
 /// `None` and leaves the slice unchanged under the same conditions as
 /// [`log_softmax_in_place`].
 ///

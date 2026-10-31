@@ -283,3 +283,24 @@ fn product_compensated_is_more_accurate_over_a_million_terms() {
         "plain error {err_plain:e}"
     );
 }
+
+#[test]
+fn product_with_zero_is_zero_even_if_the_rest_overflows() {
+    let big = L::from_ln(f64::MAX);
+    for xs in [
+        [big, big, L::ZERO],
+        [L::ZERO, big, big],
+        [big, L::ZERO, big],
+    ] {
+        assert_eq!(xs.iter().product::<L>(), L::ZERO, "{xs:?}");
+        assert_eq!(L::product_compensated(xs), L::ZERO, "{xs:?}");
+    }
+    let tiny = L::from_ln(-f64::MAX);
+    for xs in [[tiny, tiny, L::INFINITY], [L::INFINITY, tiny, tiny]] {
+        assert_eq!(xs.iter().product::<L>(), L::INFINITY, "{xs:?}");
+        assert_eq!(L::product_compensated(xs), L::INFINITY, "{xs:?}");
+    }
+    // Without exact zeros or infinities, overflow of the stored log saturates.
+    assert_eq!([big, big].iter().product::<L>(), L::INFINITY);
+    assert_eq!([tiny, tiny].iter().product::<L>(), L::ZERO);
+}

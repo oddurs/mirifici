@@ -153,13 +153,13 @@ impl<F: LogFloat> Log<F> {
                 sum = t;
             }
         }
-        // The running sum itself can overflow (only beyond ±1.8e308 for f64).
-        has_zero |= sum == F::NEG_INFINITY;
-        has_inf |= sum == F::INFINITY;
         match (has_zero, has_inf) {
             (true, true) => panic!("Log::product_compensated: 0 * inf is indeterminate"),
             (true, false) => Self::ZERO,
             (false, true) => Self::INFINITY,
+            // The finite part can overflow (only beyond ±1.8e308 for f64); `sum` is then
+            // ±∞ and the compensation NaN, so return the saturated sum itself.
+            (false, false) if !sum.is_finite() => Self(sum),
             (false, false) => Self(sum + c),
         }
     }
@@ -180,15 +180,46 @@ impl<'a, F: LogFloat> Sum<&'a Log<F>> for Log<F> {
     }
 }
 
-/// Plain sum of stored logs; NaN only from −∞ + ∞, i.e. 0 · ∞.
+/// Π of stored logs. Exact `ZERO` and `INFINITY` factors are handled apart from the finite
+/// ones, so the result does not depend on the order of the factors even when the finite
+/// part overflows: `[big, big, ZERO]` is `ZERO`, as is `[ZERO, big, big]`.
 #[track_caller]
-fn product_plain<F: LogFloat>(iter: impl Iterator<Item = F>) -> Log<F> {
+fn product_plain<F: LogFloat>(mut iter: impl Iterator<Item = F>) -> Log<F> {
+    // Fast path: a plain running sum, with one well-predicted check per term.
     let mut s = F::ZERO;
-    for l in iter {
-        s += l;
+    while let Some(l) = iter.next() {
+        let t = s + l;
+        if !t.is_finite() {
+            return product_slow(s, l, iter);
+        }
+        s = t;
     }
-    assert!(!s.is_nan(), "Log product: 0 * inf is indeterminate");
     Log(s)
+}
+
+/// The rest of [`product_plain`] once the running sum `s` (finite so far) meets an infinite
+/// term `first` or overflows on it.
+#[cold]
+#[track_caller]
+fn product_slow<F: LogFloat>(mut s: F, first: F, rest: impl Iterator<Item = F>) -> Log<F> {
+    let mut has_zero = false;
+    let mut has_inf = false;
+    for l in core::iter::once(first).chain(rest) {
+        if l == F::NEG_INFINITY {
+            has_zero = true;
+        } else if l == F::INFINITY {
+            has_inf = true;
+        } else {
+            // May overflow to ±∞: saturation, as for a single multiplication.
+            s += l;
+        }
+    }
+    match (has_zero, has_inf) {
+        (true, true) => panic!("Log product: 0 * inf is indeterminate"),
+        (true, false) => Log::ZERO,
+        (false, true) => Log::INFINITY,
+        (false, false) => Log(s),
+    }
 }
 
 impl<F: LogFloat> Product for Log<F> {
