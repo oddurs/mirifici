@@ -165,7 +165,10 @@ pub mod serde_as_value {
         }
 
         fn visit_f64<E: de::Error>(self, v: f64) -> Result<Log<F>, E> {
-            Log::try_from_value(F::from_f64(v)).map_err(E::custom)
+            // Take the log in f64 before narrowing to F, so a `Log<f32>` keeps values such
+            // as 1e-50 that an f32 cannot hold.
+            let x = Log::<f64>::try_from_value(v).map_err(E::custom)?;
+            Ok(Log::from_ln(F::from_f64(x.ln())))
         }
 
         fn visit_f32<E: de::Error>(self, v: f32) -> Result<Log<F>, E> {

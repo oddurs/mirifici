@@ -43,6 +43,10 @@ impl<F: LogFloat> UlpsEq for Log<F> {
 
     #[inline]
     fn ulps_eq(&self, other: &Self, epsilon: F, max_ulps: u32) -> bool {
-        self.0 == other.0 || self.0.ulps_eq(&other.0, epsilon, max_ulps)
+        // −∞ and −MAX are one ulp apart as bit patterns; infinities must match exactly.
+        if !self.0.is_finite() || !other.0.is_finite() {
+            return self.0 == other.0;
+        }
+        self.0.ulps_eq(&other.0, epsilon, max_ulps)
     }
 }

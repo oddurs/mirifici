@@ -128,11 +128,15 @@ fn parse_ln<F: LogFloat>(s: &str) -> Result<F, ParseLogError> {
     };
     let k = lead as f64 + exp10;
 
-    if k.abs() <= F::MAX_SAFE_EXP10 {
-        // Comfortably inside the normal range: parse with the float's own correctly rounded
-        // parser, so that `"0.1".parse::<Log>()` equals `Log::from_value(0.1)` exactly.
+    if k.abs() <= F::MAX_SAFE_EXP10 + 1.0 {
+        // Possibly inside the normal range: parse with the float's own correctly rounded
+        // parser, so that `"0.1".parse::<Log>()` equals `Log::from_value(0.1)` exactly. At
+        // the edges (|k| = 308 for f64) the result may be subnormal or infinite; those fall
+        // through to the log-space path, which keeps the precision the float lost.
         let v: F = s.parse().map_err(|_| err(Kind::Invalid))?;
-        return Ok(v.ln());
+        if v >= F::MIN_POSITIVE && v.is_finite() {
+            return Ok(v.ln());
+        }
     }
 
     // Beyond the float's range: ln(m) + k·ln(10) in double-double.
@@ -146,13 +150,28 @@ fn parse_ln<F: LogFloat>(s: &str) -> Result<F, ParseLogError> {
     Ok(F::from_f64(dd::from_decimal(m, k)))
 }
 
-/// Splits an optional leading sign.
-fn split_sign(s: &str) -> (bool, &str) {
-    match s.as_bytes().first() {
+/// Splits an optional leading sign. A sign with nothing after it is invalid (not empty),
+/// as for float parsing.
+fn split_sign(s: &str) -> Result<(bool, &str), ParseLogError> {
+    let (negative, rest) = match s.as_bytes().first() {
         Some(b'-') => (true, &s[1..]),
         Some(b'+') => (false, &s[1..]),
         _ => (false, s),
+    };
+    if rest.is_empty() && !s.is_empty() {
+        return Err(err(Kind::Invalid));
     }
+    Ok((negative, rest))
+}
+
+/// Whether an already validated unsigned number is non-zero, judged from its digits rather
+/// than its parsed value, so that a negative value that underflows is still negative.
+fn is_nonzero(s: &str) -> bool {
+    s.bytes()
+        .take_while(|b| !matches!(b, b'e' | b'E'))
+        .any(|b| matches!(b, b'1'..=b'9'))
+        || s.eq_ignore_ascii_case("inf")
+        || s.eq_ignore_ascii_case("infinity")
 }
 
 impl<F: LogFloat> FromStr for Log<F> {
@@ -164,8 +183,10 @@ impl<F: LogFloat> FromStr for Log<F> {
     /// `+4E+7`), plus `inf` / `infinity` in any case. Exponents are not limited to the
     /// float's range: `"2.5e-90210"` parses to a `Log` whose stored log is the correctly
     /// rounded ln(2.5·10⁻⁹⁰²¹⁰), up to a few units in the last place of `ln(10)·exponent`.
-    /// Inside the float's normal range the string is parsed by `F` itself and then
-    /// converted, so `s.parse::<Log>()` equals `Log::from_value(s.parse::<f64>())` exactly.
+    /// Whenever `F`'s own parser gives a normal float, that float is used, so
+    /// `s.parse::<Log>()` equals `Log::from_value(s.parse::<f64>()?)` exactly; strings it
+    /// would turn into a subnormal, zero or infinity go through log space instead and keep
+    /// their precision.
     ///
     /// `-0` parses to zero. Magnitudes beyond the range of `Log<F>` itself (|ln x| above the
     /// largest finite `F`; for `f64`, decimal exponents beyond about ±7.8·10³⁰⁷) saturate to
@@ -173,7 +194,8 @@ impl<F: LogFloat> FromStr for Log<F> {
     ///
     /// # Errors
     ///
-    /// On empty input, invalid syntax, a negative non-zero value, or `NaN`.
+    /// On empty input, invalid syntax, a negative non-zero value (even one too small to
+    /// represent), or `NaN`.
     ///
     /// ```
     /// use mirifici::Log;
@@ -183,9 +205,9 @@ impl<F: LogFloat> FromStr for Log<F> {
     /// assert!("-1".parse::<Log>().is_err());
     /// ```
     fn from_str(s: &str) -> Result<Self, ParseLogError> {
-        let (negative, rest) = split_sign(s);
+        let (negative, rest) = split_sign(s)?;
         let ln = parse_ln::<F>(rest)?;
-        if negative && ln != F::NEG_INFINITY {
+        if negative && is_nonzero(rest) {
             return Err(err(Kind::Negative));
         }
         Ok(Log(ln + F::ZERO))
@@ -202,7 +224,7 @@ impl<F: LogFloat> FromStr for SignedLog<F> {
     ///
     /// On empty input, invalid syntax, or `NaN`.
     fn from_str(s: &str) -> Result<Self, ParseLogError> {
-        let (negative, rest) = split_sign(s);
+        let (negative, rest) = split_sign(s)?;
         let ln = parse_ln::<F>(rest)?;
         Ok(SignedLog::new(negative, Log(ln + F::ZERO)))
     }

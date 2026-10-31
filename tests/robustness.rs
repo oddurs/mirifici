@@ -83,7 +83,7 @@ proptest! {
             // printed through the float: one rounding of the value
             let tol = 2.0 * f64::EPSILON * x.ln().abs().max(1.0);
             prop_assert!(back == x || (back.ln() - x.ln()).abs() <= tol, "{shortest}");
-        } else if x.ln().abs() < 1e15 {
+        } else if x.ln().abs() < 2e16 {
             prop_assert_eq!(back, x, "{}", shortest);
         }
         for s in [

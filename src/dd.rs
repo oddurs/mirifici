@@ -71,17 +71,21 @@ fn mul(a: f64, (hi, lo): (f64, f64)) -> (f64, f64) {
     (s, e - (s - p))
 }
 
+/// Beyond this |log10 x| (2^53), values are printed as a bare power of ten.
+pub(crate) const POWER_OF_TEN_ONLY: f64 = 9007199254740992.0;
+
 /// Splits a finite ln(x) into a decimal exponent `k` (an integer-valued float) and a
 /// mantissa `m ∈ [1, 10)` with x ≈ m · 10^k.
 pub(crate) fn to_decimal(ln: f64) -> (f64, f64) {
     let (th, tl) = mul(ln, LOG10_E);
-    if th.abs() >= 4503599627370496.0 {
-        // |log10 x| ≥ 2^52: the stored log has no fractional precision left, so the
-        // mantissa is meaningless; report a power of ten.
+    if th.abs() >= POWER_OF_TEN_ONLY {
+        // |log10 x| ≥ 2^53: not every integer exponent is representable, so neither is the
+        // split into exponent and mantissa; report the nearest power of ten.
         return (1.0, th);
     }
+    // For |th| < 2^53, k and k ± 1 are exact integers. th − k is exact (it is the
+    // fractional part of th); above 2^52 it is zero and the fraction lives in `tl`.
     let mut k = floor(th);
-    // th − k is exact (it is the fractional part of th).
     let mut f = (th - k) + tl;
     if f < 0.0 {
         f += 1.0;

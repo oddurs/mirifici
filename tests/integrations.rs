@@ -85,6 +85,21 @@ mod serde {
         assert!(serde_json::from_str::<Model>(r#"{"p":-1}"#).is_err());
         assert!(serde_json::from_str::<Model>(r#"{"p":"-1e-5000"}"#).is_err());
     }
+
+    #[derive(serde::Deserialize)]
+    struct Model32 {
+        #[serde(with = "mirifici::serde_as_value")]
+        p: Log<f32>,
+    }
+
+    #[test]
+    fn as_value_keeps_f32_out_of_range_numbers() {
+        // 1e-50 is not an f32, but Log<f32> holds it; the number must not be narrowed first.
+        let m: Model32 = serde_json::from_str(r#"{"p":1e-50}"#).unwrap();
+        assert!((m.p.log10() + 50.0).abs() < 1e-5);
+        let m: Model32 = serde_json::from_str(r#"{"p":1e50}"#).unwrap();
+        assert!((m.p.log10() - 50.0).abs() < 1e-5);
+    }
 }
 
 #[cfg(feature = "num-traits")]
@@ -152,6 +167,17 @@ mod approx {
         assert_relative_eq!(L::INFINITY, L::INFINITY);
         assert_ulps_eq!(L::ZERO, L::ZERO);
         assert!(approx::abs_diff_ne!(L::ZERO, L::from_ln(-1e300)));
+        // −∞ and −MAX are adjacent bit patterns; they must still differ.
+        assert!(approx::ulps_ne!(
+            L::ZERO,
+            L::from_ln(-f64::MAX),
+            max_ulps = 4
+        ));
+        assert!(approx::ulps_ne!(
+            L::INFINITY,
+            L::from_ln(f64::MAX),
+            max_ulps = 4
+        ));
     }
 }
 

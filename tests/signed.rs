@@ -154,3 +154,10 @@ fn debug_format() {
     assert_eq!(format!("{:?}", s(-1.0)), "SignedLog(-, ln = 0.0)");
     assert_eq!(format!("{:?}", S::ZERO), "SignedLog(+, ln = -inf)");
 }
+
+#[test]
+fn try_to_value() {
+    assert_eq!(s(-2.5).try_to_value(), Some(-2.5));
+    assert_eq!(S::NEG_INFINITY.try_to_value(), Some(f64::NEG_INFINITY));
+    assert_eq!(S::new(true, L::from_log10(-400.0)).try_to_value(), None);
+}

@@ -64,7 +64,8 @@ impl<F: LogFloat> Log<F> {
         if p == F::ZERO || self.0 == F::ZERO {
             Self::ONE
         } else {
-            Self(p * self.0)
+            // `+ 0` turns a −0 product (e.g. from underflow) into +0.
+            Self(p * self.0 + F::ZERO)
         }
     }
 
@@ -91,7 +92,7 @@ impl<F: LogFloat> Log<F> {
         if n == 0 || self.0 == F::ZERO {
             Self::ONE
         } else {
-            Self(F::from_i32(n) * self.0)
+            Self(F::from_i32(n) * self.0 + F::ZERO)
         }
     }
 
@@ -100,7 +101,7 @@ impl<F: LogFloat> Log<F> {
     #[inline]
     #[must_use]
     pub fn sqrt(self) -> Self {
-        Self(self.0 * F::HALF)
+        Self(self.0 * F::HALF + F::ZERO)
     }
 
     /// 1/x, computed as `−ln`. Exact. `ZERO.recip()` is `INFINITY` and vice versa.

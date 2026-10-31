@@ -72,7 +72,7 @@ fn display_rounding_carries_into_exponent() {
 
 #[test]
 fn display_extreme_logs() {
-    // Beyond |log10 x| = 2^52 the stored log cannot resolve a mantissa: print a power of
+    // Beyond |log10 x| = 2^53 not every exponent is representable: print a power of
     // ten, which parses back to within an ulp of the log.
     let x = L::from_ln(1e300);
     let s = x.to_string();
@@ -256,7 +256,7 @@ fn display_fixtures() {
 
 proptest! {
     #[test]
-    fn round_trip_beyond_range_is_exact(ln in prop_oneof![-1e15..-745.2f64, 709.8..1e15f64]) {
+    fn round_trip_beyond_range_is_exact(ln in prop_oneof![-2e16..-745.2f64, 709.8..2e16f64, -2e16..-1e15f64, 1e15..2e16f64]) {
         let x = L::from_ln(ln);
         let s = x.to_string();
         prop_assert_eq!(s.parse::<L>().unwrap(), x, "{}", s);
@@ -285,4 +285,59 @@ proptest! {
         let tol = 5.0 * 10f64.powi(-(p as i32) - 1) + 2.0 * f64::EPSILON * ln.abs();
         prop_assert!((back.ln() - x.ln()).abs() <= tol);
     }
+}
+
+// ---- regressions from review ----------------------------------------------------------------
+
+#[test]
+fn round_trip_between_2_pow_52_and_2_pow_53() {
+    let x = L::from_ln(-1.5645060302681268e16);
+    assert_eq!(x.to_string().parse::<L>().unwrap(), x);
+}
+
+#[test]
+fn parse_matches_from_value_at_range_edges() {
+    for s in [
+        "1.1457388879924349e308",
+        "1.7976931348623157e308",
+        "2.2250738585072014e-308",
+    ] {
+        let v: f64 = s.parse().unwrap();
+        assert_eq!(s.parse::<L>().unwrap(), L::from_value(v), "{s}");
+    }
+    let v: f32 = "6.643192e-38".parse().unwrap();
+    assert_eq!(
+        "6.643192e-38".parse::<Log<f32>>().unwrap(),
+        Log::from_value(v)
+    );
+    // Just past the edge the log-space path keeps what the float would lose.
+    let sub: L = "1e-310".parse().unwrap();
+    assert!((sub.log10() + 310.0).abs() < 1e-12);
+}
+
+#[test]
+fn negative_values_are_rejected_even_when_they_underflow() {
+    let tiny = format!("-1e-{}", "9".repeat(320));
+    assert!(tiny.parse::<L>().is_err());
+    assert!("-0e-99999".parse::<L>().is_ok());
+    assert!("-0.000".parse::<L>().is_ok());
+    let e = "+".parse::<L>().unwrap_err().to_string();
+    assert!(e.contains("invalid"), "{e}");
+    assert!("-".parse::<SignedLog>().is_err());
+}
+
+#[test]
+fn log_display_uses_accurate_conversions() {
+    let x = L::from_log10(90000.0);
+    assert_eq!(x.display_base(10.0).to_string(), "10^90000");
+    assert_eq!(
+        L::from_log2(-1074.0).display_base(2.0).to_string(),
+        "2^-1074"
+    );
+}
+
+#[test]
+fn no_negative_zero_from_arithmetic() {
+    assert_eq!(L::from_ln(1e-300).powf(-1e-300).ln().to_bits(), 0);
+    assert_eq!(L::from_ln(-5e-324).sqrt().ln().to_bits(), 0);
 }

@@ -334,3 +334,11 @@ impl<F: LogFloat> fmt::Debug for Log<F> {
         f.write_str(")")
     }
 }
+
+impl From<Log<f32>> for Log<f64> {
+    /// Lossless widening: every `f32` stored log is exactly an `f64`.
+    #[inline]
+    fn from(x: Log<f32>) -> Self {
+        Self(f64::from(x.0))
+    }
+}

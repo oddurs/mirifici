@@ -137,6 +137,15 @@ impl<F: LogFloat> SignedLog<F> {
         if self.negative { -v } else { v }
     }
 
+    /// The value as a float, or `None` if a non-zero, finite value would round to ±0 or
+    /// ±∞; see [`Log::try_to_value`].
+    #[must_use]
+    #[inline]
+    pub fn try_to_value(self) -> Option<F> {
+        let v = self.magnitude.try_to_value()?;
+        Some(if self.negative { -v } else { v })
+    }
+
     /// a + b, or `None` for ∞ − ∞.
     #[inline]
     #[must_use]
@@ -385,5 +394,13 @@ impl<F: LogFloat> fmt::Debug for SignedLog<F> {
         })?;
         fmt::Debug::fmt(&self.magnitude.0, f)?;
         f.write_str(")")
+    }
+}
+
+impl From<SignedLog<f32>> for SignedLog<f64> {
+    /// Lossless widening of the magnitude; the sign is kept.
+    #[inline]
+    fn from(x: SignedLog<f32>) -> Self {
+        Self::new(x.negative, x.magnitude.into())
     }
 }

@@ -81,8 +81,8 @@ fn write_sci(
     let (m, k) = dd::to_decimal(ln);
     let digits = match f.precision() {
         Some(p) => mantissa(m, k, p),
-        // |log10 x| ≥ 2^52: the stored log cannot resolve a mantissa (see `to_decimal`).
-        None if k.abs() >= 4503599627370496.0 => mantissa(m, k, 0),
+        // |log10 x| ≥ 2^53: only a power of ten can be printed (see `to_decimal`).
+        None if k.abs() >= dd::POWER_OF_TEN_ONLY => mantissa(m, k, 0),
         None => {
             let mut found = None;
             for p in 0..=17 {
@@ -162,6 +162,11 @@ impl<F: LogFloat> fmt::Display for Log<F> {
     /// from the stored log: `1e-5000`, `2.5e-90210`. There, the precision flag sets the
     /// number of mantissa decimals, and without it the shortest mantissa that parses back
     /// to the same `Log` is chosen. Width, fill, alignment, `+` and `0` flags are honoured.
+    ///
+    /// In range, the printed text is that of the float [`to_value`](Log::to_value), so it
+    /// round-trips only to within one rounding of the value: `Log::from_ln(1e-20)` prints
+    /// `1`, which parses back to `ONE`. Use the stored log (`Debug`, or serde) when the exact
+    /// bits matter.
     ///
     /// ```
     /// use mirifici::Log;
@@ -258,7 +263,16 @@ impl<F: LogFloat> fmt::Display for LogDisplay<F> {
         } else {
             write!(f, "{}^", self.base)?;
         }
-        let exponent = self.value.log(self.base);
+        // The common bases use the double-double conversions, as `log10`/`log2` do.
+        let exponent = if self.base == F::E {
+            ln
+        } else if self.base == F::from_f64(10.0) {
+            self.value.log10()
+        } else if self.base == F::from_f64(2.0) {
+            self.value.log2()
+        } else {
+            self.value.log(self.base)
+        };
         match f.precision() {
             Some(p) => write!(f, "{exponent:.p$}"),
             None => write!(f, "{exponent}"),

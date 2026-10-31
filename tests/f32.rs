@@ -51,3 +51,22 @@ fn sums_and_products() {
     assert!((p.log10() - 157.97).abs() < 1e-2);
     assert!((L::product_compensated(xs.iter().copied()).log10() - 157.97).abs() < 1e-2);
 }
+
+#[test]
+fn widening_is_lossless() {
+    for x in [
+        L::ZERO,
+        L::ONE,
+        L::INFINITY,
+        L::from_log10(-1000.0),
+        L::from_value(0.3),
+    ] {
+        let w: Log<f64> = x.into();
+        assert_eq!(w.ln(), f64::from(x.ln()));
+    }
+    let s: mirifici::SignedLog<f64> = mirifici::SignedLog::<f32>::from_value(-2.5).into();
+    assert_eq!(
+        s,
+        mirifici::SignedLog::new(true, Log::<f32>::from_value(2.5).into())
+    );
+}

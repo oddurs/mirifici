@@ -98,12 +98,13 @@ error of up to ~4·10⁻⁶ relative. Use `f64` unless memory or bandwidth domin
   rounded digits of the exact value e^ln. The decimal exponent and the mantissa come from
   `ln · log10(e)` in double-double.
 - **Round trips** (property tests): `parse(display(x)) == x` exactly for every `x`
-  outside the float's range with |ln x| < 10¹⁵, because the default precision is the
+  outside the float's range with |log10 x| < 2⁵³ (|ln x| < 2·10¹⁶), because the default precision is the
   shortest mantissa that parses back to the same `Log`. Inside the range `Display`
   prints the float `to_value()`, which costs one rounding of the value.
 
-Beyond |log10 x| ≥ 2⁵² (|ln x| ≳ 10¹⁶) the stored log no longer resolves a mantissa, so
-the value is printed as a power of ten and round-trips to within an ulp of the log.
+Beyond |log10 x| ≥ 2⁵³ (|ln x| ≳ 2·10¹⁶) not every integer decimal exponent is an `f64`,
+so the value is printed as the nearest power of ten and round-trips to within an ulp or
+two of the stored log (whose ulp there is at least 4).
 
 ### Sums and products of many terms
 
