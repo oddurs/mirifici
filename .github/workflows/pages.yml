@@ -45,7 +45,7 @@ jobs:
           <meta http-equiv="refresh" content="0; url=mirifici/"><a href="mirifici/">mirifici API reference</a>
           HTML
           touch _site/.nojekyll
-      - uses: actions/configure-pages@v5
+      - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v4
         with:
           path: _site
