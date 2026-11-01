@@ -148,26 +148,31 @@ function drawHyperbola() {
   text(svg, tx(X2), H - m.b + 18, "x²", "annot strong", "middle");
 
   // draggable handle on the curve at t = x
-  const h = el("circle", { cx: tx(X), cy: ty(1 / X), r: 9, class: "handle", tabindex: 0, role: "slider",
-    "aria-label": "x", "aria-valuemin": 1.05, "aria-valuemax": 2.6, "aria-valuenow": X.toFixed(2) }, svg);
-  const set = (v) => { hyp.x = Math.min(2.6, Math.max(1.05, v)); document.getElementById("hyp-x").value = hyp.x; drawHyperbola(); };
-  h.addEventListener("pointerdown", (e) => {
-    h.setPointerCapture(e.pointerId);
-    const move = (ev) => {
-      const r = svg.getBoundingClientRect();
-      set(tx.invert(((ev.clientX - r.left) / r.width) * W));
-    };
-    h.addEventListener("pointermove", move);
-    h.addEventListener("pointerup", () => h.removeEventListener("pointermove", move), { once: true });
-  });
-  h.addEventListener("keydown", (e) => {
-    if (e.key === "ArrowRight" || e.key === "ArrowUp") { set(hyp.x + 0.02); e.preventDefault(); }
-    if (e.key === "ArrowLeft" || e.key === "ArrowDown") { set(hyp.x - 0.02); e.preventDefault(); }
-  });
+  el("circle", { cx: tx(X), cy: ty(1 / X), r: 9, class: "handle" }, svg);
+  hyp.toT = (clientX) => { const r = svg.getBoundingClientRect(); return tx.invert(((clientX - r.left) / r.width) * W); };
+  svg.setAttribute("aria-valuenow", X.toFixed(2));
 
   const ln = Math.log(X).toFixed(4);
   tex(document.getElementById("hyp-readout"),
     `\\int_1^{${X.toFixed(2)}}\\frac{dt}{t} = ${ln} = \\int_{${X.toFixed(2)}}^{${X2.toFixed(2)}}\\frac{dt}{t}`);
+}
+
+// Pointer and keyboard handling live on the <svg>, which survives redraws (its children don't).
+function initHyperbola() {
+  const svg = document.getElementById("hyperbola");
+  Object.entries({ tabindex: 0, role: "slider", "aria-label": "x", "aria-valuemin": 1.05, "aria-valuemax": 2.6 })
+    .forEach(([k, v]) => svg.setAttribute(k, v));
+  const set = (v) => { hyp.x = Math.min(2.6, Math.max(1.05, v)); document.getElementById("hyp-x").value = hyp.x; drawHyperbola(); };
+  let dragging = false;
+  svg.addEventListener("pointerdown", (e) => { dragging = true; svg.setPointerCapture(e.pointerId); set(hyp.toT(e.clientX)); });
+  svg.addEventListener("pointermove", (e) => { if (dragging) set(hyp.toT(e.clientX)); });
+  const stop = () => { dragging = false; };
+  svg.addEventListener("pointerup", stop);
+  svg.addEventListener("pointercancel", stop);
+  svg.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowRight" || e.key === "ArrowUp") { set(hyp.x + 0.02); e.preventDefault(); }
+    if (e.key === "ArrowLeft" || e.key === "ArrowDown") { set(hyp.x - 0.02); e.preventDefault(); }
+  });
 }
 
 // ---- II. underflow --------------------------------------------------------------------
@@ -422,9 +427,205 @@ function drawBenford() {
   }
 }
 
+
+// ---- II. the slide rule ---------------------------------------------------------------
+const rule = { a: 2, b: 3.5 };
+const RULE_TICKS = [
+  // [from, to, step, size]: tick spacing within one decade, by sub-range
+  [1, 2, 0.05, 0.35], [1, 2, 0.1, 0.55], [2, 5, 0.1, 0.35], [2, 5, 0.5, 0.55], [5, 10, 0.2, 0.35], [5, 10, 0.5, 0.55],
+];
+function drawRule() {
+  const svg = document.getElementById("slide-rule");
+  const W = Math.max(320, svg.clientWidth || 900);
+  const small = W < 600;
+  const H = small ? 150 : 176, pad = small ? 14 : 28, L = W - 2 * pad;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  svg.replaceChildren();
+  const yTop = 30, mid = small ? 84 : 96, yBot = H - 22, tick = small ? 18 : 22;
+  const Dx = (v) => pad + (Math.log10(v) / 2) * L;
+  const C0 = Dx(rule.a);
+  const Cx = (v) => C0 + (Math.log10(v) / 2) * L;
+
+  // stator with the D scale (two decades) along its top edge
+  el("rect", { x: pad - 10, y: mid, width: L + 20, height: yBot - mid, rx: 3, class: "rule-body" }, svg);
+  const decade = (x, y, dir, decadeIndex) => {
+    for (const [lo, hi, step, size] of RULE_TICKS) {
+      for (let v = lo; v < hi - 1e-9; v += step) {
+        if (Math.abs(v - Math.round(v)) < 1e-9) continue;
+        const xv = x(v * Math.pow(10, decadeIndex));
+        el("line", { x1: xv, x2: xv, y1: y, y2: y + dir * tick * size, class: "rule-tick minor" }, svg);
+      }
+    }
+    for (let k = 1; k <= 10; k++) {
+      const xv = x(k * Math.pow(10, decadeIndex));
+      el("line", { x1: xv, x2: xv, y1: y, y2: y + dir * tick, class: "rule-tick" }, svg);
+    }
+  };
+  decade(Dx, mid, 1, 0);
+  decade(Dx, mid, 1, 1);
+  for (const k of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]) {
+    if (small && k > 10 && k !== 20 && k !== 50 && k !== 100) continue;
+    if (small && k < 10 && ![1, 2, 3, 5].includes(k)) continue;
+    text(svg, Dx(k), mid + tick + 14, String(k), "rule-num", "middle");
+  }
+  text(svg, pad - 6, yBot - 6, "D", "rule-name", "end");
+
+  // the slide with the C scale (one decade) along its bottom edge
+  el("rect", { x: C0 - 8, y: yTop, width: L / 2 + 16, height: mid - yTop, rx: 3, class: "rule-slide" }, svg);
+  decade(Cx, mid, -1, 0);
+  for (let k = 1; k <= 10; k++) {
+    if (small && ![1, 2, 3, 5, 10].includes(k)) continue;
+    text(svg, Cx(k), mid - tick - 6, String(k), k === 1 || k === 10 ? "rule-num red" : "rule-num", "middle");
+  }
+  text(svg, C0 - 12, yTop + 16, "C", "rule-name", "end");
+
+  // the cursor: glass and hairline at b on C, reading a·b on D
+  const xb = Cx(rule.b);
+  el("rect", { x: xb - 16, y: yTop - 12, width: 32, height: yBot - yTop + 18, rx: 3, class: "rule-cursor" }, svg);
+  el("line", { x1: xb, x2: xb, y1: yTop - 12, y2: yBot + 6, class: "rule-hair" }, svg);
+  el("path", { d: `M${C0 - 5},${mid - 1}L${C0 + 5},${mid - 1}L${C0},${mid + 7}Z`, class: "rule-mark" }, svg);
+
+  const ab = rule.a * rule.b;
+  tex(document.getElementById("rule-readout"),
+    `\\log a + \\log b = \\log ab:\\quad ${rule.a.toFixed(2)} \\times ${rule.b.toFixed(2)} = ${ab.toFixed(ab < 10 ? 3 : 2)}`);
+
+  // geometry for the event handlers in initRule
+  rule.geom = { W, L, C0, slideTop: yTop, slideBottom: mid };
+}
+function initRule() {
+  const svg = document.getElementById("slide-rule");
+  svg.setAttribute("tabindex", "0");
+  const pos = (e) => {
+    const r = svg.getBoundingClientRect();
+    return { x: ((e.clientX - r.left) / r.width) * rule.geom.W, y: ((e.clientY - r.top) / r.height) * r.height * (rule.geom.W / r.width) };
+  };
+  const setB = (x) => { const g = rule.geom; rule.b = Math.min(10, Math.max(1, Math.pow(10, ((x - g.C0) / g.L) * 2))); drawRule(); };
+  let drag = null;
+  svg.addEventListener("pointerdown", (e) => {
+    const p = pos(e), g = rule.geom;
+    const onSlide = p.x >= g.C0 - 8 && p.x <= g.C0 + g.L / 2 + 8 && p.y >= g.slideTop && p.y <= g.slideBottom;
+    svg.setPointerCapture(e.pointerId);
+    if (onSlide) drag = { x: p.x, a: rule.a };
+    else setB(p.x);
+  });
+  svg.addEventListener("pointermove", (e) => {
+    const p = pos(e);
+    if (drag) {
+      rule.a = Math.min(10, Math.max(1, drag.a * Math.pow(10, ((p.x - drag.x) / rule.geom.L) * 2)));
+      drawRule();
+    } else if (e.buttons === 0 || e.pointerType !== "mouse") {
+      setB(p.x);
+    }
+  });
+  const stop = () => { drag = null; };
+  svg.addEventListener("pointerup", stop);
+  svg.addEventListener("pointercancel", stop);
+  svg.addEventListener("keydown", (e) => {
+    const f = Math.pow(10, e.shiftKey ? 0.02 : 0.005);
+    const key = { ArrowRight: ["a", f], ArrowLeft: ["a", 1 / f], ArrowUp: ["b", f], ArrowDown: ["b", 1 / f] }[e.key];
+    if (!key) return;
+    e.preventDefault();
+    rule[key[0]] = Math.min(10, Math.max(1, rule[key[0]] * key[1]));
+    drawRule();
+  });
+}
+
+// ---- IV. the calculator (the crate, compiled to WebAssembly) ---------------------------
+let calc = null;
+async function initCalc() {
+  const input = document.getElementById("calc-input");
+  const value = document.getElementById("calc-value");
+  try {
+    const resp = await fetch("calc.wasm");
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const { instance } = await WebAssembly.instantiate(await resp.arrayBuffer(), {});
+    calc = instance.exports;
+  } catch (err) {
+    value.className = "calc-value error";
+    value.textContent = "The calculator needs WebAssembly, which this browser did not load.";
+    return;
+  }
+  let timer = 0;
+  const run = () => renderCalc(input.value);
+  input.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(run, 120); });
+  for (const b of document.querySelectorAll(".chips button")) {
+    b.addEventListener("click", () => { input.value = b.textContent; run(); input.focus(); });
+  }
+  run();
+}
+
+function evaluateWasm(src) {
+  const bytes = new TextEncoder().encode(src);
+  const cap = Math.max(1, bytes.length);
+  const p = calc.alloc(cap);
+  new Uint8Array(calc.memory.buffer, p, bytes.length).set(bytes);
+  const packed = calc.evaluate(p, bytes.length);
+  const ptr = Number(packed >> 32n), len = Number(packed & 0xffffffffn);
+  const json = new TextDecoder().decode(new Uint8Array(calc.memory.buffer, ptr, len));
+  calc.dealloc(ptr, len);
+  calc.dealloc(p, cap);
+  return JSON.parse(json);
+}
+
+function renderCalc(src) {
+  const value = document.getElementById("calc-value");
+  const rows = document.getElementById("calc-rows");
+  let r;
+  try { r = evaluateWasm(src); } catch (e) { r = { ok: false, error: String(e) }; }
+  rows.replaceChildren();
+  if (!r.ok) {
+    value.className = "calc-value error";
+    value.textContent = r.error;
+    return;
+  }
+  value.className = "calc-value";
+  value.textContent = r.value;
+  const add = (k, v) => {
+    const dt = document.createElement("dt"); dt.textContent = k;
+    const dd = document.createElement("dd"); dd.textContent = v;
+    rows.append(dt, dd);
+  };
+  add("relative error ≤", `${r.err}  (${r.digits} significant digit${r.digits === "1" ? "" : "s"})`);
+  add("stored value, in full", r.exact);
+  add("stored ln |x|", r.ln);
+  add("as a power of 2", r.pow2);
+  add("as a power of 10", r.pow10);
+  add("to_value() as f64", r.f64);
+}
+
+// ---- navigation and copy buttons -------------------------------------------------------
+function initNav() {
+  const links = [...document.querySelectorAll('nav a[href^="#"]')]
+    .map((a) => [document.getElementById(a.getAttribute("href").slice(1)), a])
+    .filter(([s]) => s);
+  const update = () => {
+    // The current section is the last one whose top has passed a line 30% down the window.
+    const line = innerHeight * 0.3;
+    let current = null;
+    for (const [s, a] of links) if (s.getBoundingClientRect().top <= line) current = a;
+    for (const [, a] of links) a.classList.toggle("active", a === current);
+  };
+  addEventListener("scroll", update, { passive: true });
+  update();
+}
+
+function initCopy() {
+  for (const pre of document.querySelectorAll("pre.code")) {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "copy"; b.textContent = "Copy";
+    b.addEventListener("click", async () => {
+      try { await navigator.clipboard.writeText(pre.querySelector("code").innerText); b.textContent = "Copied"; }
+      catch (_) { b.textContent = "Select and copy"; }
+      setTimeout(() => (b.textContent = "Copy"), 1500);
+    });
+    pre.appendChild(b);
+  }
+}
+
 // ---- wiring ---------------------------------------------------------------------------
 function drawAll() {
   drawHyperbola();
+  drawRule();
   drawUnderflow();
   drawKernels();
   drawAccuracy();
@@ -436,6 +637,11 @@ function init() {
   renderMath();
   drawHero();
   drawBriggs();
+  initHyperbola();
+  initRule();
+  initNav();
+  initCopy();
+  initCalc();
   document.getElementById("hyp-x").addEventListener("input", (e) => { hyp.x = +e.target.value; drawHyperbola(); });
   for (const id of ["uf-p", "uf-n"]) document.getElementById(id).addEventListener("input", () => { readUnderflow(); drawUnderflow(); });
   readUnderflow();

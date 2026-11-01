@@ -1,0 +1,22 @@
+[package]
+name = "mirifici-calc"
+version = "0.0.0"
+edition = "2024"
+publish = false
+description = "The website's calculator: mirifici compiled to WebAssembly, behind a tiny expression language."
+
+[workspace]
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+# libm: the same bits in every browser as on every other platform.
+mirifici = { path = "../..", default-features = false, features = ["libm"] }
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

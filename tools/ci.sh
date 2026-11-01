@@ -32,6 +32,12 @@ cargo hack check --feature-powerset --at-least-one-of std,libm --no-dev-deps
 cargo hack test --feature-powerset --at-least-one-of std,libm --lib
 cargo doc --no-deps --all-features
 
+node --check site/main.js
+cargo fmt --manifest-path site/calc/Cargo.toml --check
+cargo clippy --manifest-path site/calc/Cargo.toml --all-targets -- -D warnings
+cargo test -q --manifest-path site/calc/Cargo.toml
+cargo build -q --release --target wasm32-unknown-unknown --manifest-path site/calc/Cargo.toml
+
 if rustup toolchain list | grep -q nightly; then
   MIRIFLAGS="-Zmiri-strict-provenance -Zmiri-deterministic-floats" \
     cargo +nightly miri test -q --features "$INTEGRATIONS" --test integrations --test core --test signed

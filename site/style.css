@@ -263,3 +263,47 @@ footer { padding: 2.5rem 0 3rem; color: var(--muted); font-size: 0.92rem; border
 /* KaTeX inherits ink; give it the book's size. */
 .katex { font-size: 1.04em; color: inherit; }
 .katex-display { margin: 0; }
+
+/* ---- slide rule ----------------------------------------------------------------------- */
+.rule-plate { padding: 1.2rem 1.2rem 0.8rem; }
+#slide-rule { width: 100%; display: block; touch-action: none; user-select: none; }
+.rule-body { fill: var(--paper-3); stroke: var(--rule); }
+.rule-slide { fill: var(--paper-2); stroke: var(--ink-2); stroke-width: 1; cursor: grab; }
+.rule-slide:active { cursor: grabbing; }
+.rule-tick { stroke: var(--ink); stroke-width: 1; }
+.rule-tick.minor { stroke-width: 0.6; }
+.rule-num { fill: var(--ink); font-family: var(--serif); font-size: 13px; font-feature-settings: "lnum"; pointer-events: none; }
+.rule-num.red { fill: var(--rubric); }
+.rule-name { fill: var(--muted); font-family: var(--serif); font-size: 13px; font-style: italic; pointer-events: none; }
+.rule-cursor { fill: color-mix(in srgb, var(--series-1) 10%, transparent); stroke: var(--series-1); stroke-width: 1; pointer-events: none; }
+.rule-hair { stroke: var(--rubric); stroke-width: 1.4; pointer-events: none; }
+.rule-mark { fill: var(--rubric); pointer-events: none; }
+.hint { color: var(--muted); font-size: 0.88rem; }
+
+/* ---- calculator ----------------------------------------------------------------------- */
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.calc { display: grid; gap: 0.9rem; }
+.calc-in input { width: 100%; font-family: var(--mono); font-size: clamp(1.05rem, 0.9rem + 0.8vw, 1.45rem);
+  padding: 0.8rem 1rem; color: var(--ink); background: var(--paper); border: 1px solid var(--rule); border-radius: 6px; }
+.calc-in input:focus { outline: 2px solid var(--rubric); outline-offset: 1px; border-color: transparent; }
+.chips { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+.chips button { font-family: var(--mono); font-size: 0.8rem; color: var(--ink-2); background: var(--paper);
+  border: 1px solid var(--rule); border-radius: 999px; padding: 0.3rem 0.75rem; cursor: pointer; }
+.chips button:hover { border-color: var(--ink-2); color: var(--ink); }
+.calc-help { margin: 0; color: var(--muted); font-size: 0.92rem; }
+.calc-out { font-family: var(--serif); font-size: 1rem; min-width: 0; display: block; background: var(--paper); border: 1px solid var(--rule); border-radius: 6px; padding: 1.1rem 1.3rem; min-height: 9rem; }
+.calc-value { font-family: var(--mono); font-size: clamp(1.4rem, 1rem + 2vw, 2.4rem); color: var(--rubric); word-break: break-all; line-height: 1.25; }
+.calc-value.error { color: var(--ink-2); font-family: var(--serif); font-style: italic; font-size: 1.15rem; }
+.calc-rows { display: grid; grid-template-columns: 11rem 1fr; gap: 0.3rem 1rem; margin: 0.9rem 0 0; font-size: 0.95rem; }
+.calc-rows dt { color: var(--muted); }
+.calc-rows dd { margin: 0; font-family: var(--mono); font-size: 0.85rem; word-break: break-all; color: var(--ink-2); }
+@media (max-width: 560px) { .calc-rows { grid-template-columns: 1fr; } .calc-rows dd { margin-bottom: 0.4rem; } }
+
+/* ---- navigation and polish ----------------------------------------------------------- */
+nav a.active { color: var(--rubric); }
+:focus-visible { outline: 2px solid var(--rubric); outline-offset: 2px; border-radius: 3px; }
+pre.code { position: relative; }
+.copy { position: absolute; top: 0.5rem; right: 0.5rem; font-family: var(--serif); font-size: 0.8rem; color: var(--muted);
+  background: var(--paper); border: 1px solid var(--rule); border-radius: 4px; padding: 0.15rem 0.55rem; cursor: pointer; opacity: 0; transition: opacity 0.15s; }
+pre.code:hover .copy, .copy:focus-visible { opacity: 1; }
+@media (hover: none) { .copy { opacity: 1; } }

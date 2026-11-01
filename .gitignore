@@ -2,3 +2,7 @@
 /bench/target
 **/*.rs.bk
 __pycache__/
+
+# Site build outputs (built in the Pages workflow)
+/site/calc.wasm
+/site/calc/target

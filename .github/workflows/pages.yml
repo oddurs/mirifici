@@ -23,15 +23,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Calculator (the crate, compiled to WebAssembly)
+        run: cargo build --release --target wasm32-unknown-unknown --manifest-path site/calc/Cargo.toml
       - uses: dtolnay/rust-toolchain@nightly
       - name: API reference (all features, with feature badges as on docs.rs)
-        run: cargo doc --no-deps --all-features
+        run: cargo +nightly doc --no-deps --all-features
         env:
           RUSTDOCFLAGS: --cfg docsrs -D warnings
       - name: Assemble
         run: |
           mkdir -p _site
           cp -r site/. _site/
+          rm -rf _site/calc
+          cp site/calc/target/wasm32-unknown-unknown/release/mirifici_calc.wasm _site/calc.wasm
           cp -r target/doc _site/api
           cat > _site/api/index.html <<'HTML'
           <!doctype html><meta charset="utf-8"><title>mirifici API</title>

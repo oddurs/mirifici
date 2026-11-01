@@ -7,6 +7,16 @@
 <meta name="description" content="mirifici stores a non-negative number as its natural logarithm, so products become sums and 1e-5000 stays a number. A Rust crate after Napier's Mirifici Logarithmorum Canonis Descriptio (1614).">
 <meta property="og:title" content="mirifici">
 <meta property="og:description" content="A log-space number type for Rust: products become sums, and magnitudes far beyond f64 stay representable.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://oddurs.github.io/mirifici/">
+<meta property="og:image" content="https://oddurs.github.io/mirifici/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="mirifici: ln(ab) = ln a + ln b, beside the hyperbola y = 1/t">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="https://oddurs.github.io/mirifici/">
+<meta name="theme-color" content="#fbf7ee" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15130f" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -32,7 +42,9 @@
   </a>
   <nav aria-label="Sections">
     <a href="#canon">Canon</a>
+    <a href="#rule">Rule</a>
     <a href="#underflow">Underflow</a>
+    <a href="#calculator">Calculator</a>
     <a href="#arithmetic">Arithmetic</a>
     <a href="#accuracy">Accuracy</a>
     <a href="#history">History</a>
@@ -100,9 +112,31 @@
   </div>
 </section>
 
-<section id="underflow">
+<section id="rule">
   <div class="wrap">
-    <h2><span class="sec">II.</span> Where floats fall to zero</h2>
+    <h2><span class="sec">II.</span> Gunter&rsquo;s line and Oughtred&rsquo;s rule</h2>
+    <p class="intro">Within a decade of the <i>Descriptio</i>, Edmund Gunter laid logarithms out as
+      lengths on a ruler (1620), and William Oughtred set two such scales side by side so they
+      could slide (c.&thinsp;1622, published 1632). Distance along a scale is the logarithm, so
+      sliding one scale along the other <em>adds</em> logarithms: put the 1 of the upper scale
+      over <i>a</i>, and under any <i>b</i> on it read <i>a</i>&middot;<i>b</i> below. This is
+      exactly what <code>Log</code> does with its stored float.</p>
+    <figure class="plate rule-plate">
+      <svg id="slide-rule" role="img" aria-labelledby="rule-title rule-desc">
+        <title id="rule-title">A slide rule with a C scale over a D scale</title>
+        <desc id="rule-desc">Drag the upper scale to set a; move the cursor to choose b; the lower scale shows a times b.</desc>
+      </svg>
+      <figcaption>
+        <span class="readout" id="rule-readout"></span>
+        <span class="hint">Drag the upper scale; move over it to place the cursor. Arrow keys work too.</span>
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="underflow" class="band">
+  <div class="wrap">
+    <h2><span class="sec">III.</span> Where floats fall to zero</h2>
     <p class="intro">Multiply <i>n</i> independent probabilities of size <i>p</i>, as a hidden Markov
       model or a likelihood does. Plain <code>f64</code> runs into its floor and returns zero;
       <code>Log</code> keeps the value, prints it, and can still compare and add it.</p>
@@ -137,9 +171,45 @@
   </div>
 </section>
 
+<section id="calculator">
+  <div class="wrap">
+    <h2><span class="sec">IV.</span> A calculator beyond the range</h2>
+    <p class="intro">This is the crate itself, compiled to WebAssembly and running in your browser.
+      Values are <code>SignedLog&lt;f64&gt;</code>, so they may be negative and as large or small
+      as <span data-tex="e^{\pm 1.8\times10^{308}}">e^(±1.8·10³⁰⁸)</span>. Each result carries a
+      bound on its relative error, propagated through every step by the rules in the accuracy
+      notes, and is shown only to the digits that bound supports.</p>
+    <div class="calc">
+      <label class="calc-in">
+        <span class="sr-only">Expression</span>
+        <input id="calc-input" type="text" spellcheck="false" autocomplete="off" autocapitalize="off"
+               value="1000000! / 999999!" aria-describedby="calc-help">
+      </label>
+      <div class="chips" role="list" aria-label="Examples">
+        <button type="button" role="listitem">1e-5000 * 1e-5000</button>
+        <button type="button" role="listitem">0.4^1000</button>
+        <button type="button" role="listitem">1000000!</button>
+        <button type="button" role="listitem">2.5e-90210 + 2.5e-90210</button>
+        <button type="button" role="listitem">1e400 - 1e400 + 1</button>
+        <button type="button" role="listitem">sqrt(1e-99999)</button>
+        <button type="button" role="listitem">exp(1e6) / exp(999999)</button>
+        <button type="button" role="listitem">(1 + 1e-12) - 1</button>
+        <button type="button" role="listitem">0 * inf</button>
+      </div>
+      <p id="calc-help" class="calc-help">Numbers in any notation (<code>2.5e-90210</code>),
+        <code>+ − × ÷ ^ !</code>, parentheses, and <code>ln log10 log2 sqrt exp abs</code>,
+        <code>e</code>, <code>pi</code>, <code>inf</code>.</p>
+      <output class="calc-out" id="calc-out" aria-live="polite">
+        <div class="calc-value" id="calc-value">&nbsp;</div>
+        <dl class="calc-rows" id="calc-rows"></dl>
+      </output>
+    </div>
+  </div>
+</section>
+
 <section id="arithmetic" class="band">
   <div class="wrap">
-    <h2><span class="sec">III.</span> Arithmetic on the logarithms</h2>
+    <h2><span class="sec">V.</span> Arithmetic on the logarithms</h2>
     <p class="intro">Operators act on values; the work happens on the stored logarithms
       <span data-tex="\ell_a = \ln a">ℓa = ln a</span>. Every edge case is defined, and none of them
       produces NaN: indeterminate forms such as <span data-tex="0\cdot\infty">0·∞</span> return
@@ -182,7 +252,7 @@
 
 <section id="accuracy">
   <div class="wrap">
-    <h2><span class="sec">IV.</span> Accuracy, measured</h2>
+    <h2><span class="sec">VI.</span> Accuracy, measured</h2>
     <p class="intro">Absolute error in the stored log is relative error in the value. Each operation is
       checked against 60-digit references computed with mpmath, in units of
       <span data-tex="\varepsilon\cdot\max(1,|\ln x|)">ε·max(1, |ln x|)</span>. A correctly rounded
@@ -214,7 +284,7 @@
 
 <section id="history" class="band">
   <div class="wrap">
-    <h2><span class="sec">V.</span> A short history, where it lives in the API</h2>
+    <h2><span class="sec">VII.</span> A short history, where it lives in the API</h2>
     <ol class="timeline">
       <li>
         <time>1614</time>
@@ -263,7 +333,7 @@
 <section id="benford">
   <div class="wrap two">
     <div class="prose">
-      <h2><span class="sec">VI.</span> Leading digits, beyond the float range</h2>
+      <h2><span class="sec">VIII.</span> Leading digits, beyond the float range</h2>
       <p>A number has leading digit <i>d</i> exactly when the fractional part of its base-10 logarithm
         lies in <span data-tex="[\log_{10} d,\ \log_{10}(d+1))">[log d, log(d+1))</span>. Data spread
         evenly over many orders of magnitude has its logarithms spread evenly modulo one, so digit
@@ -291,7 +361,7 @@
 
 <section id="use" class="band">
   <div class="wrap">
-    <h2><span class="sec">VII.</span> Use</h2>
+    <h2><span class="sec">IX.</span> Use</h2>
     <div class="two">
       <div>
         <pre class="code"><code><span class="c"># Cargo.toml</span>
