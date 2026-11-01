@@ -28,7 +28,7 @@ publishes.
       (at most 5), `categories`, `repository`, `documentation`.
 - [ ] README: the example still compiles (it is a doctest) and the accuracy table matches
       `docs/accuracy.md`.
-- [ ] Examples run: `for e in hmm_forward likelihood briggs_table benford; do cargo run
+- [ ] Examples run: `for e in hmm_forward likelihood briggs_table benford binomial_test; do cargo run
       --release --example $e; done`.
 
 ## Packaging

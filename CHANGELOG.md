@@ -6,7 +6,44 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
-### Fixed
+## [0.1.0] - 2026-11-01
+
+First release.
+
+### Added
+
+- `Log<F>` for `F = f32 | f64` (default `f64`): a non-negative number stored as its
+  natural logarithm, the size of `F`. Constants `ZERO`, `ONE`, `INFINITY`; checked and
+  unchecked constructors from values and logarithms in base e, 2 and 10; accessors
+  `ln`, `log2`, `log10`, `log`, `to_value`, `try_to_value`.
+- Arithmetic on values: `*`, `/`, `+` (log-sum-exp) with assign and reference forms;
+  `checked_mul`, `checked_div`, `checked_sub`, `abs_diff`, `powf`, `powi`, `sqrt`,
+  `recip`; `log1mexp` (Mächler 2012). No `-` operator; no NaN from valid inputs.
+- Aggregation: streaming `Sum`, `Log::sum_two_pass`, `Product`,
+  `Log::product_compensated` (Neumaier).
+- Ordering: `PartialEq`, `PartialOrd`, `total_cmp`, `max`, `min`.
+- `SignedLog<F>`: sign plus `Log` magnitude with `+`, `-`, `*`, `/`, unary `-`, `Sum`,
+  `Product`, conversions to and from `Log`.
+- Special functions `Log::gamma`, `Log::factorial`, `Log::binomial`; probability helpers
+  `Log::complement`, `Log::from_logit`, `Log::logit`.
+- `slice`: `logsumexp`, `log_softmax_in_place`, `softmax_in_place`, `log_mean_exp`,
+  `log_mean_exp_weighted`, `log_dot`, `log_cumsum_exp_in_place`, `sample_index`,
+  `effective_sample_size`, `normalize_in_place`, `mean`, `mean_weighted`.
+- Text beyond the float's range: `Display`, `LowerExp`, `UpperExp`, `FromStr`
+  (`"2.5e-90210"`), `LogDisplay` (`"2^-1024.5"`).
+- Optional integrations: `serde` (with `serde_as_value`), `num-traits`, `approx`,
+  `bytemuck`.
+- `#![no_std]`, no allocation, `libm` without `std`. MSRV 1.85.
+- Accuracy suite against 60-digit mpmath fixtures, property tests, Criterion
+  benchmarks, five examples, and documentation with sourced history notes.
+
+### Development history
+
+The release was built in milestones, each ending with every check in `tools/ci.sh` passing.
+
+#### M10: Hardening, reproducibility and the inference toolkit
+
+##### Fixed
 - `Product` and `product_compensated` panicked on, or depended on the order of, factors
   whose finite logs overflow `F::MAX` together with an exact `ZERO`.
 - `serde_as_value` deserialised `Log<f32>` numbers outside `f32`'s range (e.g. `1e-50`) as
@@ -20,7 +57,7 @@ All notable changes to this project are documented here. The format follows
 - `LogDisplay` in base 10 or 2 was less accurate than `log10()`/`log2()`.
 - `powf`, `powi` and `sqrt` could store `-0.0`.
 
-### Changed
+##### Changed
 - `libm` is now an optional feature. `no_std` users enable it with
   `default-features = false, features = ["libm"]`; a build with neither `std` nor `libm`
   fails with an explanatory error. Enabling `libm` together with `std` routes all math
@@ -28,7 +65,7 @@ All notable changes to this project are documented here. The format follows
 - `log1mexp`'s documented bound is 1.5 for `f64` (was 1), matching what the formula
   supports with a math library accurate to one ulp; the Windows UCRT measures 1.25.
 
-### Added
+##### Added
 - Special functions in log space: `Log::gamma`, `Log::factorial`, `Log::binomial`, with
   mpmath accuracy fixtures and bounds.
 - Probability helpers: `Log::complement` (1 − p), `Log::from_logit` (σ(x), exact in both
@@ -54,38 +91,6 @@ All notable changes to this project are documented here. The format follows
   macOS and Windows, `thumbv6m` and `wasm32` builds, package-contents check, weekly
   schedule; dependabot; `CONTRIBUTING.md`, `SECURITY.md`.
 - Clippy `pedantic` enabled with documented exceptions.
-
-## [0.1.0] - not yet published
-
-First release.
-
-### Added
-
-- `Log<F>` for `F = f32 | f64` (default `f64`): a non-negative number stored as its
-  natural logarithm, the size of `F`. Constants `ZERO`, `ONE`, `INFINITY`; checked and
-  unchecked constructors from values and logarithms in base e, 2 and 10; accessors
-  `ln`, `log2`, `log10`, `log`, `to_value`, `try_to_value`.
-- Arithmetic on values: `*`, `/`, `+` (log-sum-exp) with assign and reference forms;
-  `checked_mul`, `checked_div`, `checked_sub`, `abs_diff`, `powf`, `powi`, `sqrt`,
-  `recip`; `log1mexp` (Mächler 2012). No `-` operator; no NaN from valid inputs.
-- Aggregation: streaming `Sum`, `Log::sum_two_pass`, `Product`,
-  `Log::product_compensated` (Neumaier).
-- Ordering: `PartialEq`, `PartialOrd`, `total_cmp`, `max`, `min`.
-- `SignedLog<F>`: sign plus `Log` magnitude with `+`, `-`, `*`, `/`, unary `-`, `Sum`,
-  `Product`, conversions to and from `Log`.
-- `slice`: `logsumexp`, `log_softmax_in_place`, `softmax_in_place`, `log_mean_exp`,
-  `log_mean_exp_weighted`, `normalize_in_place`, `mean`, `mean_weighted`.
-- Text beyond the float's range: `Display`, `LowerExp`, `UpperExp`, `FromStr`
-  (`"2.5e-90210"`), `LogDisplay` (`"2^-1024.5"`).
-- Optional integrations: `serde` (with `serde_as_value`), `num-traits`, `approx`,
-  `bytemuck`.
-- `#![no_std]`, no allocation, `libm` without `std`. MSRV 1.85.
-- Accuracy suite against 60-digit mpmath fixtures, property tests, Criterion
-  benchmarks, four examples, and documentation with sourced history notes.
-
-### Development history
-
-The release was built in milestones, each ending with every check in `tools/ci.sh` passing.
 
 #### M9: Release preparation
 - API audit: `#![deny(missing_docs)]`, unused internal float constants removed, `ln` is a
@@ -162,3 +167,6 @@ The release was built in milestones, each ending with every check in `tools/ci.s
 - CI: fmt, clippy, tests on stable and MSRV (1.85), no_std build for
   `thumbv7em-none-eabihf`, feature powerset with `cargo hack`.
 - `docs/prior-art.md` (survey of existing crates) and `docs/api.md` (API sketch).
+
+[Unreleased]: https://github.com/oddurs/mirifici/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/oddurs/mirifici/releases/tag/v0.1.0
