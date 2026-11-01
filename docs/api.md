@@ -59,6 +59,16 @@ impl<F: LogFloat> Log<F> {
 
     // formatting
     pub fn display_base(self, base: F) -> LogDisplay<F>;      // "2^-1024.5"
+
+    // special functions (added after the M0 sketch)
+    pub fn gamma(x: F) -> Self;                               // Γ(x), x ≥ 0
+    pub fn factorial(n: u64) -> Self;
+    pub fn binomial(n: u64, k: u64) -> Self;
+
+    // probability helpers
+    pub fn complement(self) -> Option<Self>;                  // 1 − p, None if p > 1
+    pub fn from_logit(x: F) -> Self;                          // σ(x) = 1/(1 + e^−x)
+    pub fn logit(self) -> Option<F>;                          // ln(p/(1 − p)), None if p > 1
 }
 
 pub fn log1mexp<F: LogFloat>(d: F) -> F;                     // ln(1 - e^-d), d ≥ 0 (Mächler 2012)
@@ -98,6 +108,10 @@ pub mod slice {
     pub fn softmax_in_place<F: LogFloat>(ln: &mut [F]) -> Option<F>;
     pub fn log_mean_exp<F: LogFloat>(ln: &[F]) -> Option<F>;
     pub fn log_mean_exp_weighted<F: LogFloat>(ln: &[F], ln_weights: &[F]) -> Option<F>;
+    pub fn log_dot<F: LogFloat>(a: &[F], b: &[F]) -> F;          // ln Σ exp(aᵢ + bᵢ)
+    pub fn log_cumsum_exp_in_place<F: LogFloat>(ln: &mut [F]);
+    pub fn sample_index<F: LogFloat>(ln_weights: &[F], u: F) -> Option<usize>;
+    pub fn effective_sample_size<F: LogFloat>(ln_weights: &[F]) -> Option<F>;
     pub fn normalize_in_place<F: LogFloat>(xs: &mut [Log<F>]) -> Option<Log<F>>;
     pub fn mean<F: LogFloat>(xs: &[Log<F>]) -> Option<Log<F>>;
     pub fn mean_weighted<F: LogFloat>(xs: &[Log<F>], weights: &[Log<F>]) -> Option<Log<F>>;
@@ -141,4 +155,7 @@ pub mod serde_as_value {                                     // #[serde(with = "
 - `log2`, `log10`, `from_log2` and `from_log10` use double-double constants (M5), which
   changed their accuracy, not their signatures.
 - `SignedLog` gained `total_cmp`, and `num-traits` `Zero`/`One` (M4, M6).
+- Added for usefulness after 0.1's first audit: `gamma`, `factorial`, `binomial`,
+  `complement`, `from_logit`, `logit`; `slice::{log_dot, log_cumsum_exp_in_place,
+  sample_index, effective_sample_size}`; `SignedLog::{powi, recip, try_to_value}`.
 - No item was removed.

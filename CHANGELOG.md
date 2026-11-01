@@ -29,6 +29,15 @@ All notable changes to this project are documented here. The format follows
   supports with a math library accurate to one ulp; the Windows UCRT measures 1.25.
 
 ### Added
+- Special functions in log space: `Log::gamma`, `Log::factorial`, `Log::binomial`, with
+  mpmath accuracy fixtures and bounds.
+- Probability helpers: `Log::complement` (1 − p), `Log::from_logit` (σ(x), exact in both
+  tails), `Log::logit`.
+- Slice tools for inference: `slice::log_dot` (the HMM step), `log_cumsum_exp_in_place`,
+  `sample_index` (inverse-CDF sampling from log-weights), `effective_sample_size`.
+- `SignedLog::powi` and `SignedLog::recip`.
+- `examples/binomial_test.rs`: exact binomial p-values down to 10⁻¹⁶⁰¹, checked against
+  big-integer arithmetic.
 - `docs/stability.md`: what counts as a breaking change, and the check behind each
   promise.
 - `tests/reproducible.rs`: a hash over a battery of results under `libm`, checked on

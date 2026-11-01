@@ -50,3 +50,9 @@ Choices not fixed by the design brief. Each one keeps NaN out and the API small.
 - **Reproducibility is promised only with `libm`.** Platform math libraries differ in the last bit (glibc vs. the Windows UCRT measured 0.52 vs 1.25 for `log1mexp`), so with `std` only the documented bounds are promised.
 - **The serialized form is frozen from 0.1.0,** with documents in `tests/wire_format.rs`; stored data outlives code.
 - **Miri runs with `-Zmiri-deterministic-floats`.** Miri otherwise adds random error to `exp`/`ln` to model imprecise math libraries, which the exact-value tests rightly reject; the job's purpose is the `unsafe` bytemuck impls.
+- **Special functions are computed in `f64` for both float types and implemented in the crate** (no `lgamma` from the platform: `std` does not expose one, and owning the code keeps the `libm` feature bit-reproducible). Near the zeros of ln Γ the series about 2 keeps the absolute error at a few ε, which is what a stored log needs.
+- **`Log::binomial` picks the most accurate of three methods** (exact `u128`, compensated sum of ratios, ln Γ differences) by size, and documents the third's larger error rather than hiding it.
+- **`Log::gamma(0)` is `INFINITY`** (the limit from the right, as `x / 0` is); negative arguments panic, because Γ takes both signs there.
+- **`complement`, `logit` return `None` for p > 1** instead of panicking: values above one are legitimate `Log`s, just not probabilities.
+- **`sample_index` takes the uniform draw as an argument** rather than depending on `rand`; any generator works and the crate stays dependency-free.
+- **`effective_sample_size` works relative to the largest weight**; forming 2·ln w overflowed for weights near e^(f64::MAX) (found by the robustness tests).

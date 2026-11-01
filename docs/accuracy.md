@@ -93,6 +93,29 @@ slightly less accurate than glibc's.
 With ε ≈ 1.2·10⁻⁷, a `Log<f32>` holding 1e-30 (|ln x| ≈ 69) carries a representation
 error of up to ~4·10⁻⁶ relative. Use `f64` unless memory or bandwidth dominates.
 
+## Special functions and the logistic function
+
+`tests/accuracy_special.rs`, against `tests/fixtures/{gamma,binomial,logistic}_*.csv`
+(mpmath, 60 digits). Same unit as above unless noted.
+
+| function | type | cases | max E (`std`) | max E (`libm`) | documented bound |
+|---|---|---|---|---|---|
+| `Log::gamma` | f64 | 1645 | 1.710 | 1.861 | 3 |
+| `Log::gamma` | f32 | 1645 | 0.482 | 0.482 | 1 |
+| `Log::binomial`, min(k, n−k) ≤ 4096 | f64 | 566 | 0.477 | 0.477 | 1 |
+| `Log::binomial`, larger k, scale ε·n·ln n | f64 | 173 | 1.576 | 1.576 | 3 |
+| `Log::from_logit` | f64 | 1500 | 0.563 | 0.563 | 1 |
+| `Log::from_logit` | f32 | 1500 | 0.446 | 0.446 | 1 |
+
+`Log::gamma` is a power series for ln Γ about 2 on [½, 2½], the recurrence
+Γ(x + 1) = xΓ(x) elsewhere below 10, and Stirling's series from 10, all evaluated in `f64`
+(also for `Log<f32>`). Binomial coefficients are exact while they fit a `u128`, a
+compensated sum of ln((n − i)/(i + 1)) for min(k, n − k) ≤ 4096, and a difference of
+ln Γ values beyond that, whose error grows with the size of the logs that cancel
+(ε·n·ln n), not with the result. The compensated sum matters: plain summation measured
+E = 22.8 on the same fixtures. `examples/binomial_test.rs` checks p-values down to 10⁻¹⁶⁰¹
+against exact integer arithmetic.
+
 ## Text: `FromStr` and `Display` beyond the float's range
 
 `tests/text.rs` checks against `tests/fixtures/{parse,display}_{f64,f32}.csv`:

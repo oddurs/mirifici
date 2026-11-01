@@ -24,6 +24,12 @@ fuzz_target!(|input: (u64, u64, u64, i32, bool, bool)| {
     ok(x.powi(n));
     ok(x.sqrt());
     ok(x.recip());
+    ok(Log::from_logit(p));
+    ok(Log::gamma(p.abs()));
+    x.complement().map(ok);
+    if let Some(l) = x.logit() {
+        assert!(!l.is_nan());
+    }
     ok([x, y, x].iter().sum());
     ok(Log::sum_two_pass(&[x, y]));
     let (u, v) = (SignedLog::new(sa, x), SignedLog::new(sb, y));

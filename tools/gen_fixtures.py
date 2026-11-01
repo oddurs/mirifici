@@ -254,6 +254,82 @@ def gen_briggs():
     write("briggs.csv", ["n", "log10"], rows)
 
 
+def gen_special(t: Type, seed: int):
+    """ln Γ, ln C(n, k), ln σ and logit (added in 0.1, after the original fixtures)."""
+    rng = random.Random(seed)
+    hi = 300 if t is F64 else 36
+
+    rows = []
+    xs = [float(n) for n in range(1, 60)] + [n + 0.5 for n in range(0, 30)]
+    xs += [1 + s * 10 ** -k for k in range(1, 15) for s in (-1, 1)]
+    xs += [2 + s * 10 ** -k for k in range(1, 15) for s in (-1, 1)]
+    for _ in range(1500):
+        kind = rng.randrange(3)
+        if kind == 0:
+            xs.append(rng.uniform(0, 12))
+        elif kind == 1:
+            xs.append(10 ** rng.uniform(-hi, 0))
+        else:
+            xs.append(10 ** rng.uniform(0, hi))
+    for x in xs:
+        x = t.round(x)
+        if x <= 0:
+            continue
+        rows.append([repr(x), *split(mpmath.loggamma(mpf(x)), t)])
+    write(f"gamma_{t.name}.csv", ["x", "ref_hi", "ref_lo"], rows)
+
+    if t is F64:
+        rows = []
+        pairs = [(n, k) for n in range(0, 140, 7) for k in range(0, n + 1, max(1, n // 6))]
+        for _ in range(600):
+            kind = rng.randrange(3)
+            n = int(10 ** rng.uniform(1, 18))
+            if kind == 0:
+                k = rng.randrange(0, min(n, 4096) + 1)
+            elif kind == 1:
+                k = rng.randrange(0, n + 1)
+            else:
+                k = n - rng.randrange(0, min(n, 50) + 1)
+            pairs.append((n, k))
+        for n, k in pairs:
+            rows.append([str(n), str(k), *split(mpmath.log(mpmath.binomial(n, k)))])
+        write("binomial_f64.csv", ["n", "k", "ref_hi", "ref_lo"], rows)
+
+    rows = []
+    lim = 1000 if t is F64 else 100
+    for _ in range(1500):
+        kind = rng.randrange(3)
+        if kind == 0:
+            x = rng.uniform(-lim, lim)
+        elif kind == 1:
+            x = rng.uniform(-40, 40)
+        else:
+            x = 10 ** rng.uniform(-20, 0) * rng.choice((-1, 1))
+        x = t.round(x)
+        # ln σ(x) = −ln(1 + e^−x); logit of p = σ(x) is x itself, so test logit on ln σ(x)
+        rows.append([repr(x), *split(-mpmath.log1p(mpmath.exp(-mpf(x))))])
+    write(f"logistic_{t.name}.csv", ["x", "ref_hi", "ref_lo"], rows)
+
+
+def gen_binomial_tail():
+    """Exact one-sided binomial tail P(X ≥ k), X ~ Bin(n, 1/2), with Python integers."""
+    rows = []
+    for n, k in [(100_000, 60_000), (100_000, 51_000), (10_000, 9_000), (10_000, 5_001)]:
+        c = 1
+        for i in range(k):  # C(n, k) by the multiplicative formula
+            c = c * (n - i) // (i + 1)
+        total = 0
+        for j in range(k, n + 1):  # Σ_{j ≥ k} C(n, j), stepping C(n, j+1) = C(n, j)(n−j)/(j+1)
+            total += c
+            c = c * (n - j) // (j + 1)
+        # log10(total / 2^n) from the top 128 bits of the exact integer
+        shift = max(0, total.bit_length() - 128)
+        log2 = mpmath.log(mpf(total >> shift), 2) + shift - n
+        log10 = log2 * mpmath.log10(2)
+        rows.append([str(n), str(k), mpmath.nstr(log10, 30)])
+    write("binomial_tail.csv", ["n", "k", "log10_p"], rows)
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     gen(F64, 1614)
@@ -261,6 +337,9 @@ def main():
     gen_text(F64, 1668)
     gen_text(F32, 1647)
     gen_briggs()
+    gen_special(F64, 1620)
+    gen_special(F32, 1668)
+    gen_binomial_tail()
 
 
 if __name__ == "__main__":

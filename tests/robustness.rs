@@ -124,6 +124,36 @@ proptest! {
             prop_assert!(no_nan(a.abs_diff(b)));
         }
         prop_assert!(!a.log2().is_nan() && !a.log10().is_nan() && !a.to_value().is_nan());
+        prop_assert!(no_nan(Log::from_logit(p)));
+        prop_assert!(no_nan(Log::gamma(p.abs())));
+        if let Some(c) = a.complement() {
+            prop_assert!(no_nan(c));
+        }
+        if let Some(l) = a.logit() {
+            prop_assert!(!l.is_nan());
+        }
+    }
+
+    #[test]
+    fn binomial_never_nan(n in any::<u64>(), k in any::<u64>(), small in 0u64..200) {
+        prop_assert!(no_nan(Log::binomial(n, k)));
+        prop_assert!(no_nan(Log::binomial(n, small)));
+        prop_assert!(no_nan(Log::binomial(n, n.saturating_sub(small))));
+        prop_assert!(no_nan(Log::factorial(n)));
+    }
+
+    #[test]
+    fn slice_tools_never_panic(xs in proptest::collection::vec(any_ln(), 0..40), u in any::<f64>()) {
+        let ys: Vec<f64> = xs.iter().rev().copied().collect();
+        let _ = slice::log_dot(&xs, &ys);
+        let mut c = xs.clone();
+        slice::log_cumsum_exp_in_place(&mut c);
+        if let Some(i) = slice::sample_index(&xs, u) {
+            prop_assert!(i < xs.len() && xs[i] != f64::NEG_INFINITY);
+        }
+        if let Some(e) = slice::effective_sample_size(&xs) {
+            prop_assert!(e >= 1.0 - 1e-9 && e <= xs.len() as f64 * (1.0 + 1e-9), "{e}");
+        }
     }
 
     #[test]

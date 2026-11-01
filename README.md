@@ -24,7 +24,10 @@ assert_eq!(parsed.to_string(), "2.5e-90210");
 ```
 
 It is meant for probabilities and likelihoods (HMMs, Bayesian inference, long products
-of small factors) and for any magnitude that does not fit in a float.
+of small factors) and for any magnitude that does not fit in a float. Beyond arithmetic it
+has what such code keeps rewriting: Γ, factorials and binomial coefficients; 1 − p and the
+logistic function without loss in the tails; and log-sum-exp, softmax, log-dot,
+sampling and effective sample size over slices of log-weights.
 
 ## Guarantees
 
@@ -85,6 +88,8 @@ of small factors) and for any magnitude that does not fit in a float.
 - [`briggs_table`](examples/briggs_table.rs): a page of a fourteen-place base-10 table in
   the manner of Briggs, checked against references.
 - [`benford`](examples/benford.rs): Benford's law on 2¹…2¹⁰⁰⁰⁰ and 1!…3000!.
+- [`binomial_test`](examples/binomial_test.rs): exact binomial p-values down to 10⁻¹⁶⁰¹,
+  where plain `f64` returns NaN, checked against big-integer arithmetic.
 
 Run one with `cargo run --example hmm_forward`.
 

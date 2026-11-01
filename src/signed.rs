@@ -186,6 +186,28 @@ impl<F: LogFloat> SignedLog<F> {
         Some(Self::new(self.negative != rhs.negative, m))
     }
 
+    /// xⁿ. The magnitude is [`Log::powi`]; the sign is negative for a negative base and odd n.
+    /// `0⁰ = 1`, and `0` to a negative power is `INFINITY`.
+    ///
+    /// ```
+    /// use mirifici::SignedLog;
+    /// let x = SignedLog::from_value(-2.0_f64);
+    /// assert!((x.powi(3).to_value() + 8.0).abs() < 1e-14);
+    /// assert!(!x.powi(2).is_negative());
+    /// ```
+    #[must_use]
+    #[inline]
+    pub fn powi(self, n: i32) -> Self {
+        Self::new(self.negative && n % 2 != 0, self.magnitude.powi(n))
+    }
+
+    /// 1/x, keeping the sign. `1/0` is `INFINITY` (zero has no sign), and `1/±∞` is `ZERO`.
+    #[must_use]
+    #[inline]
+    pub fn recip(self) -> Self {
+        Self::new(self.negative, self.magnitude.recip())
+    }
+
     /// A total order consistent with `PartialOrd` (which never fails, as there is no NaN).
     #[inline]
     pub fn total_cmp(&self, other: &Self) -> Ordering {

@@ -59,8 +59,10 @@
 //! | | |
 //! |---|---|
 //! | [`Log`] | the number type: construction, accessors, `*`, `/`, `+`, powers, ordering, `Display`, `FromStr` |
+//! | [`Log::gamma`], [`Log::factorial`], [`Log::binomial`] | special functions that outgrow floats long before their logarithms do |
+//! | [`Log::complement`], [`Log::from_logit`], [`Log::logit`] | 1 − p and the logistic function, accurate in both tails |
 //! | [`SignedLog`] | sign plus `Log` magnitude, with `+`, `-`, `*`, `/`, unary `-` |
-//! | [`slice`](mod@slice) | log-sum-exp, softmax, normalisation and means over slices |
+//! | [`slice`](mod@slice) | log-sum-exp, softmax, log-dot, cumulative sums, sampling, effective sample size, normalisation and means |
 //! | [`log1mexp`] | ln(1 − e^(−d)), the kernel of subtraction |
 //! | [`LogDisplay`] | prints a `Log` as a power of any base: `2^-1024.5` |
 //! | [`LogFloat`] | the sealed trait for `f32` and `f64` |
@@ -120,8 +122,10 @@ mod integrations;
 mod log;
 mod ops;
 mod parse;
+mod prob;
 mod signed;
 pub mod slice;
+mod special;
 
 pub use crate::add::log1mexp;
 pub use crate::error::DomainError;

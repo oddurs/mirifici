@@ -11,6 +11,8 @@ use mirifici::{Log, SignedLog, log1mexp, slice};
 /// The expected hash. Update only with a changelog entry explaining why results changed.
 const EXPECTED_F64: u64 = 0x8ad0874bff970234;
 const EXPECTED_F32: u64 = 0x63bcfb386e29169f;
+/// Γ, binomials and the logistic function (added after the first two batteries).
+const EXPECTED_SPECIAL: u64 = 0x3ac6cad959368635;
 
 /// FNV-1a, so the test needs no dependencies.
 struct Hash(u64);
@@ -134,5 +136,36 @@ fn results_are_identical_on_every_platform() {
     assert_eq!(
         f32_hash, EXPECTED_F32,
         "f32 results changed (got {f32_hash:#018x})"
+    );
+}
+
+fn battery_special() -> u64 {
+    let mut h = Hash(0xcbf2_9ce4_8422_2325);
+    let mut r = Inputs(1647);
+    for _ in 0..2000 {
+        let x = r.unit() * 50.0;
+        h.f64(Log::<f64>::gamma(x).ln());
+        h.f64(Log::<f64>::gamma(1.0 + r.unit()).ln());
+        let n = r.next_u64() >> (r.next_u64() % 60);
+        let k = if n == 0 { 0 } else { r.next_u64() % (n + 1) };
+        h.f64(Log::<f64>::binomial(n, k).ln());
+        h.f64(Log::<f64>::factorial(r.next_u64() % 100_000).ln());
+        let z = r.ln().clamp(-700.0, 700.0);
+        let p = Log::<f64>::from_logit(z);
+        h.f64(p.ln());
+        h.f64(p.logit().unwrap());
+        h.f64(p.complement().unwrap().ln());
+        h.f32(Log::<f32>::gamma((x as f32).max(1e-3)).ln());
+    }
+    h.0
+}
+
+#[test]
+fn special_functions_are_identical_on_every_platform() {
+    let got = battery_special();
+    println!("special: {got:#018x}");
+    assert_eq!(
+        got, EXPECTED_SPECIAL,
+        "special-function results changed (got {got:#018x})"
     );
 }

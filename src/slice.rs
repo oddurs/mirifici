@@ -189,3 +189,152 @@ fn len_ln<F: LogFloat>(n: usize) -> F {
     // `as f64` is exact below 2^53; F::from_f64 then rounds once.
     F::from_f64(n as f64).ln()
 }
+
+/// ln Σ exp(aᵢ + bᵢ): the log of the dot product of two vectors given as logs.
+///
+/// This is the inner step of the HMM forward algorithm (α'ⱼ = Σᵢ αᵢ·Aᵢⱼ) and of any
+/// log-space matrix–vector product, computed in two passes like [`logsumexp`] without
+/// forming aᵢ + bᵢ in memory. `−∞` for empty slices.
+///
+/// # Panics
+///
+/// If the slices have different lengths.
+///
+/// ```
+/// use mirifici::slice::log_dot;
+/// let a = [0.5f64.ln(), 0.5f64.ln()];
+/// let b = [0.2f64.ln(), 0.6f64.ln()];
+/// assert!((log_dot(&a, &b).exp() - 0.4).abs() < 1e-15);
+/// ```
+#[must_use]
+#[allow(clippy::neg_cmp_op_on_partial_ord)] // deliberate: also true for NaN
+pub fn log_dot<F: LogFloat>(a: &[F], b: &[F]) -> F {
+    assert_eq!(a.len(), b.len(), "log_dot: slices differ in length");
+    let mut m = F::NEG_INFINITY;
+    let mut at = 0;
+    for (i, (&x, &y)) in a.iter().zip(b).enumerate() {
+        let t = x + y;
+        // `!(t <= m)`: greater, or NaN (from NaN input, or −∞ + ∞), which propagates.
+        if !(t <= m) {
+            if t.is_nan() {
+                return t;
+            }
+            m = t;
+            at = i;
+        }
+    }
+    if m == F::NEG_INFINITY || m == F::INFINITY {
+        return m;
+    }
+    let mut s = F::ZERO;
+    for (i, (&x, &y)) in a.iter().zip(b).enumerate() {
+        if i != at {
+            s += (x + y - m).exp();
+        }
+    }
+    m + s.ln_1p()
+}
+
+/// Replaces each lᵢ by ln Σⱼ≤ᵢ exp(lⱼ): running sums of the values whose logs are `ln`.
+///
+/// The last element becomes the total ([`logsumexp`]). Cumulative sums are what
+/// inverse-CDF sampling and the prefix sums of forward–backward need. Each step is one
+/// log-sum-exp addition, so element i carries the error of i additions.
+///
+/// ```
+/// use mirifici::slice::log_cumsum_exp_in_place;
+/// let mut x = [1f64.ln(), 2f64.ln(), 3f64.ln()];
+/// log_cumsum_exp_in_place(&mut x);
+/// let v: Vec<f64> = x.iter().map(|l| l.exp()).collect();
+/// assert!((v[0] - 1.0).abs() < 1e-15 && (v[1] - 3.0).abs() < 1e-15 && (v[2] - 6.0).abs() < 1e-14);
+/// ```
+pub fn log_cumsum_exp_in_place<F: LogFloat>(ln: &mut [F]) {
+    let mut acc = F::NEG_INFINITY;
+    for l in ln.iter_mut() {
+        acc = crate::add::ln_add_exp(acc, *l);
+        *l = acc;
+    }
+}
+
+/// Draws an index with probability proportional to exp(lᵢ), given a uniform `u` in [0, 1).
+///
+/// Inverse-CDF sampling in log space: the first i whose running log-sum-exp exceeds
+/// ln u + logsumexp(l). Bring your own random number generator, so the crate needs none;
+/// with `rand`, pass `rng.random::<f64>()`. Entries of −∞ (zero weight) are never chosen.
+/// This is the resampling step of a particle filter, or sampling from a softmax.
+///
+/// Returns `None` if `u` is not in [0, 1) or if the total weight is zero, infinite or NaN.
+/// One pass, O(n); for many draws from the same weights, take
+/// [`log_cumsum_exp_in_place`] once and binary-search it.
+///
+/// ```
+/// use mirifici::slice::sample_index;
+/// let w = [f64::NEG_INFINITY, 1f64.ln(), 3f64.ln()]; // probabilities 0, 1/4, 3/4
+/// assert_eq!(sample_index(&w, 0.1), Some(1));
+/// assert_eq!(sample_index(&w, 0.3), Some(2));
+/// assert_eq!(sample_index(&w, 1.0), None);
+/// ```
+#[must_use]
+pub fn sample_index<F: LogFloat>(ln_weights: &[F], u: F) -> Option<usize> {
+    if !(u >= F::ZERO && u < F::ONE) {
+        return None;
+    }
+    let total = logsumexp(ln_weights);
+    if !total.is_finite() {
+        return None;
+    }
+    let target = u.ln() + total;
+    let mut acc = F::NEG_INFINITY;
+    let mut last = None;
+    for (i, &l) in ln_weights.iter().enumerate() {
+        if l == F::NEG_INFINITY {
+            continue;
+        }
+        acc = crate::add::ln_add_exp(acc, l);
+        last = Some(i);
+        if acc > target {
+            return last;
+        }
+    }
+    // Rounding can leave the running sum a hair below the total for u close to 1.
+    last
+}
+
+/// Kish's effective sample size (Σwᵢ)² / Σwᵢ² of importance weights given as logs.
+///
+/// Computed relative to the largest weight, so weights far outside the range of a float (as
+/// importance weights in high dimensions are) work. The result is a plain number
+/// between 1 (one weight dominates) and n (all weights equal). Returns `None` if every
+/// weight is zero, or a weight is infinite or NaN.
+///
+/// ```
+/// use mirifici::slice::effective_sample_size;
+/// let equal = [-5000.0_f64; 8];
+/// assert!((effective_sample_size(&equal).unwrap() - 8.0).abs() < 1e-9);
+/// let lopsided = [0.0_f64, -1000.0, -1000.0];
+/// assert!((effective_sample_size(&lopsided).unwrap() - 1.0).abs() < 1e-12);
+/// ```
+#[must_use]
+pub fn effective_sample_size<F: LogFloat>(ln_weights: &[F]) -> Option<F> {
+    // Relative to the largest weight m: ESS = (Σ e^(lᵢ−m))² / Σ e^(2(lᵢ−m)). Doubling the
+    // logs themselves would overflow for weights near e^(f64::MAX).
+    let mut m = F::NEG_INFINITY;
+    for &l in ln_weights {
+        if l.is_nan() {
+            return None;
+        }
+        if l > m {
+            m = l;
+        }
+    }
+    if !m.is_finite() {
+        return None;
+    }
+    let (mut s1, mut s2) = (F::ZERO, F::ZERO);
+    for &l in ln_weights {
+        let w = (l - m).exp();
+        s1 += w;
+        s2 += w * w;
+    }
+    Some(s1 * s1 / s2)
+}

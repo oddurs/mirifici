@@ -24,7 +24,7 @@ cargo test -q --release --features "$INTEGRATIONS" --test accuracy --test robust
 cargo test -q --release --features libm --test accuracy --test reproducible
 cargo +1.85 test --features "$INTEGRATIONS"
 cargo +1.85 test --all-features
-for e in hmm_forward likelihood briggs_table benford; do cargo run -q --release --example "$e" > /dev/null; done
+for e in hmm_forward likelihood briggs_table benford binomial_test; do cargo run -q --release --example "$e" > /dev/null; done
 
 cargo build --target thumbv7em-none-eabihf --no-default-features --features libm
 cargo build --target thumbv7em-none-eabihf --no-default-features --features "libm,$INTEGRATIONS"
